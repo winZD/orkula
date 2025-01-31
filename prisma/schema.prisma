@@ -1,0 +1,141 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model UserTable {
+  id        String         @id @default(uuid()) // UUID primary key for users
+  name      String // Name of the user (could be an organization or company)
+  contact   String? // Optional contact information for the user
+  createdAt DateTime       @default(now()) // When the user was created
+  updatedAt DateTime       @updatedAt // Last update timestamp
+  email     String         @unique
+  password  String
+  orchards  OrchardTable[] // One-to-many relation with OrchardTable (one user has many orchards)
+
+  @@map("User")
+}
+
+model OrchardTable {
+  id            String    @default(uuid()) // UUID primary key
+  userId        String // Reference to UserTable (user-specific identifier)
+  user          UserTable @relation(fields: [userId], references: [id]) // Relation to UserTable
+  name          String // Name of the orchard
+  location      String // Orchard location
+  area          Float // Orchard area in hectares
+  soilType      String // e.g., "Sandy", "Clay", "Loam"
+  irrigation    Boolean // Whether the orchard has irrigation
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  numberOfTrees Int       @default(0) // Number of trees in the orchard
+  /**
+   * trees         TreeTable[] @relation(name: "FK_Tree_Orchard") // Relation to trees
+   */
+
+  varieties VarietyTable[] @relation(name: "FK_Variety_Orchard") // Relation to varieties
+  harvests  HarvestTable[] @relation(name: "FK_Harvest_Orchard") // Relation to harvests
+
+  /**
+   * employees EmployeeTable[] @relation(name: "FK_Employee_Orchard") // Relation to employees
+   */
+  // Composite primary key to enforce multi-tenancy
+  @@id([id, userId]) // Ensure the combination of 'id' and 'userId' is unique
+  @@map("Orchard")
+}
+
+model VarietyTable {
+  id            String       @id @default(uuid()) // UUID primary key
+  name          String // Variety name, e.g., "Arbequina", "Koroneiki"
+  description   String? // Optional description
+  origin        String? // Optional origin of the variety
+  orchardId     String // UUID reference
+  orchardUserId String // User ID reference
+  treeNumber    Int          @default(0)
+  orchard       OrchardTable @relation(name: "FK_Variety_Orchard", fields: [orchardId, orchardUserId], references: [id, userId]) // Relation to orchard
+
+  /**
+   * trees         TreeTable[]  @relation(name: "FK_Tree_Variety") // Relation to trees
+   */
+  @@map("Variety")
+}
+
+/**
+ * model TreeTable {
+ * id            String       @id @default(uuid()) // UUID primary key
+ * plantedDate   DateTime // Date when the tree was planted
+ * age           Int // Age of the tree in years
+ * varietyId     String // UUID reference
+ * orchardId     String // UUID reference
+ * orchardUserId String // User ID
+ * variety       VarietyTable @relation(name: "FK_Tree_Variety", fields: [varietyId], references: [id]) // Relation to variety
+ * orchard OrchardTable @relation(name: "FK_Tree_Orchard", fields: [orchardId, orchardUserId], references: [id, userId]) // Relation to orchard
+ * harvests HarvestTable[] @relation(name: "FK_Harvest_Tree") // Relation to harvests
+ * @@map("Tree")
+ * }
+ */
+
+model HarvestTable {
+  id            String         @id @default(uuid()) // UUID primary key
+  year          Int // Store year as a Integer
+  quantity      Float // Quantity harvested in kilograms
+  quality       String // e.g., "Extra Virgin", "Virgin"
+  treeId        String // UUID reference
+  orchardId     String // UUID reference
+  orchardUserId String // User ID
+  /**
+   * tree          TreeTable      @relation(name: "FK_Harvest_Tree", fields: [treeId], references: [id]) // Relation to tree
+   */
+  orchard       OrchardTable   @relation(name: "FK_Harvest_Orchard", fields: [orchardId, orchardUserId], references: [id, userId]) // Relation to orchard
+  products      ProductTable[] @relation(name: "FK_Product_Harvest") // Relation to products
+
+  @@map("Harvest")
+}
+
+/**
+ * model EmployeeTable {
+ * id            String       @id @default(uuid()) // UUID primary key
+ * name          String // Employee's name
+ * role          String // e.g., "Farmer", "Supervisor"
+ * salary        Float // Employee's salary
+ * orchardId     String // UUID reference
+ * orchardUserId String // User ID
+ * orchard       OrchardTable @relation(name: "FK_Employee_Orchard", fields: [orchardId, orchardUserId], references: [id, userId]) // Relation to orchard
+ * hiredAt       DateTime     @default(now()) // Hiring date
+ * @@map("Employee")
+ * }
+ */
+
+model ProductTable {
+  id        String        @id @default(uuid()) // UUID primary key
+  name      String // e.g., "Olive Oil", "Canned Olives"
+  type      String // Product type
+  price     Float // Product price
+  createdAt DateTime      @default(now())
+  harvestId String? // UUID reference
+  harvest   HarvestTable? @relation(name: "FK_Product_Harvest", fields: [harvestId], references: [id]) // Relation to harvest
+
+  @@map("Product")
+}
+
+model RefreshTokenTable {
+  id        String   @id @default(uuid()) // UUID primary key
+  userId    String
+  token     String
+  createdAt DateTime
+  expiresAt DateTime
+  status    String   @default("GRANTED") //GRANTED || REVOKED
+  familyId  String
+
+  @@index([familyId])
+  @@map("RefreshTokens")
+}
