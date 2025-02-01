@@ -14,12 +14,12 @@ type TToken = {
 
 const generateAccessToken = (data: TToken) =>
   jwt.sign(data, process.env.COOKIE_JWT_SECRET as string, {
-    expiresIn: "30min",
+    expiresIn: "1min",
   });
 
 const generateRefreshToken = (data: TToken) =>
   jwt.sign(data, process.env.COOKIE_JWT_SECRET as string, {
-    expiresIn: "30d",
+    expiresIn: "2min",
   });
 
 export const verifyToken = (
@@ -55,32 +55,6 @@ export const getUserFromRequest = async (request: Request) => {
   }
 };
 
-/* export const getUserFromRequest = async (request: Request) => {
-  const cookies = parse(request.headers.get("Cookie") ?? "");
-  const at = verifyToken(cookies["at"]);
-
-  if (at) {
-    return await db.userTable.findUniqueOrThrow({
-      where: { id: at.userId },
-    });
-  } else {
-    const rt = verifyToken(cookies["rt"]);
-    if (rt) {
-      const user = await db.userTable.findUniqueOrThrow({
-        where: { id: rt.userId },
-      });
-
-      // Issue a new access token
-      const { accessToken } = await createNewTokens(user.id);
-      console.log(accessToken);
-      // Attach new access token to headers
-      const headers = createHeaderCookies(accessToken, cookies["rt"]);
-      console.log(headers);
-      return user;
-    }
-  }
-};
- */
 export const revokeOldRefreshToken = async (tokenId: string) => {
   console.log("revokeOldRefreshToken");
   try {

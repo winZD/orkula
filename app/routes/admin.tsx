@@ -1,6 +1,11 @@
 import { parse } from "cookie";
 import { useState } from "react";
-import { getUserFromRequest } from "~/auth";
+import {
+  createHeaderCookies,
+  createNewTokens,
+  getUserFromRequest,
+  verifyToken,
+} from "~/auth";
 import { db } from "~/db";
 import type { Route } from "../+types/root";
 import { NavLink, Outlet, redirect, useParams } from "react-router";
@@ -8,28 +13,31 @@ import { NavLink, Outlet, redirect, useParams } from "react-router";
 export async function loader({ params, request }: Route.LoaderArgs) {
   const cookieHeader = request.headers.get("Cookie");
   const cookies = await parse(cookieHeader || "");
-  /*   console.log(cookies); */
+  const at = verifyToken(cookies["at"]);
+  const rt = verifyToken(cookies["rt"]);
 
-  // Fetch the user from the request
-  const user = await getUserFromRequest(request);
-
-  // Check if the user exists in the database
-  if (user) {
-    const existedUser = await db.userTable.findUniqueOrThrow({
-      where: { email: user.email },
-    });
-    /*   if (existedUser) {
-      return data({
-        headers: {
-          "Set-Cookie": `at=${cookies["at"]}; rt=${cookies["rt"]}`,
-        },
+  if (at) {
+    const user = await getUserFromRequest(request);
+    if (user) {
+      const existedUser = await db.userTable.findUniqueOrThrow({
+        where: { email: user.email },
       });
-    }
-  }*/
-    if (existedUser) {
-      return { existedUser };
+
+      return existedUser ? existedUser : redirect("/login");
     }
   }
+
+  if (rt) {
+    const { accessToken, refreshToken } = await createNewTokens(
+      rt?.userId as string
+    );
+    const headers = createHeaderCookies(accessToken, refreshToken);
+    return new Response(null, {
+      status: 200,
+      headers,
+    });
+  }
+
   return redirect("/login");
 }
 
