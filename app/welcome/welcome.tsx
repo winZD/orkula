@@ -22,7 +22,7 @@ export function Welcome() {
 
       <main className="flex flex-col md:flex-row flex-1 w-full">
         {/* Image Section */}
-        <section className="w-full md:w-1/2 h-64 bg-cream">
+        <section className="w-full md:w-1/2 h-64">
           <div>
             {" "}
             <img
@@ -34,7 +34,7 @@ export function Welcome() {
         </section>
 
         {/* Description Section */}
-        <section className="w-full md:w-1/2 flex flex-col items-start justify-center px-8 md:px-16 py-12 md:py-0 gap-6 bg-cream">
+        <section className="w-full md:w-1/2 flex flex-col items-start justify-center px-8 md:px-16 py-12 md:py-0 gap-6">
           <h1 className="text-4xl md:text-5xl font-bold text-forest">Orkula</h1>
           <p className="text-base md:text-lg leading-relaxed max-w-md text-forest">
             A modern agriculture management platform. Track your fields, monitor
