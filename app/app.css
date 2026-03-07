@@ -3,13 +3,11 @@
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
     "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --color-forest: #1b4019;
+  --color-cream: #ede8d0;
 }
 
 html,
 body {
-  @apply bg-lime-800 dark:bg-lime-950;
-
-  @media (prefers-color-scheme: dark) {
-    color-scheme: dark;
-  }
+  background-color: var(--color-cream);
 }
