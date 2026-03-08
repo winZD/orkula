@@ -1,3 +1,5 @@
+import { Link } from "react-router";
+
 export function Welcome() {
   return (
     <div className="flex flex-col h-screen w-full">
@@ -5,18 +7,18 @@ export function Welcome() {
       <header className="flex items-center justify-between px-6 md:px-10 py-4 bg-forest">
         <span className="text-xl font-bold text-cream">Orkula</span>
         <nav className="flex items-center gap-3 md:gap-4">
-          <a
-            href="/login"
+          <Link
+            to="/login"
             className="text-cream hover:opacity-80 transition-opacity text-sm md:text-base"
           >
             Log in
-          </a>
-          <a
-            href="/signup"
+          </Link>
+          <Link
+            to="/signup"
             className="px-4 md:px-5 py-2 text-sm md:text-base font-semibold rounded-lg transition-opacity hover:opacity-80 bg-cream text-forest"
           >
             Sign in
-          </a>
+          </Link>
         </nav>
       </header>
 
