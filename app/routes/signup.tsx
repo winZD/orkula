@@ -29,31 +29,19 @@ export default function Signup() {
             <label htmlFor="name" className="text-sm font-medium">
               Name
             </label>
-            <Input
-              id="name"
-              type="text"
-              placeholder="Your name"
-            />
+            <Input id="name" type="text" placeholder="Your name" />
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="email" className="text-sm font-medium">
               Email
             </label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-            />
+            <Input id="email" type="email" placeholder="you@example.com" />
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="password" className="text-sm font-medium">
               Password
             </label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="••••••••"
-            />
+            <Input id="password" type="password" placeholder="••••••••" />
           </div>
         </CardContent>
         <CardFooter className="flex flex-col gap-3">
