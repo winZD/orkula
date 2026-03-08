@@ -1,5 +1,6 @@
 import { Link } from "react-router";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import {
   Card,
   CardContent,
@@ -28,33 +29,30 @@ export default function Signup() {
             <label htmlFor="name" className="text-sm font-medium">
               Name
             </label>
-            <input
+            <Input
               id="name"
               type="text"
               placeholder="Your name"
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="email" className="text-sm font-medium">
               Email
             </label>
-            <input
+            <Input
               id="email"
               type="email"
               placeholder="you@example.com"
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="password" className="text-sm font-medium">
               Password
             </label>
-            <input
+            <Input
               id="password"
               type="password"
               placeholder="••••••••"
-              className="rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
             />
           </div>
         </CardContent>
