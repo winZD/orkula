@@ -52,14 +52,26 @@ model Grove {
   location  String?
   area      Float?
   treeCount Int?
-  variety   OliveVariety?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   tenantId String
   tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  harvests Harvest[]
+  varieties GroveVariety[]
+  harvests  Harvest[]
+}
+
+model GroveVariety {
+  id        String       @id @default(cuid())
+  variety   OliveVariety
+  treeCount Int?
+  createdAt DateTime     @default(now())
+
+  groveId String
+  grove   Grove  @relation(fields: [groveId], references: [id], onDelete: Cascade)
+
+  @@unique([groveId, variety])
 }
 
 model Harvest {
