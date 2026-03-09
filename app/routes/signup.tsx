@@ -26,10 +26,28 @@ export default function Signup() {
         </CardHeader>
         <CardContent className="flex flex-col gap-3">
           <div className="flex flex-col gap-1">
-            <label htmlFor="name" className="text-sm font-medium">
-              Name
+            <label htmlFor="farmName" className="text-sm font-medium">
+              Farm / Organization name
             </label>
-            <Input id="name" type="text" placeholder="Your name" />
+            <Input
+              id="farmName"
+              type="text"
+              placeholder="Horvat Olive Farm"
+            />
+          </div>
+          <div className="flex gap-3">
+            <div className="flex flex-1 flex-col gap-1">
+              <label htmlFor="firstName" className="text-sm font-medium">
+                First name
+              </label>
+              <Input id="firstName" type="text" placeholder="Ivan" />
+            </div>
+            <div className="flex flex-1 flex-col gap-1">
+              <label htmlFor="lastName" className="text-sm font-medium">
+                Last name
+              </label>
+              <Input id="lastName" type="text" placeholder="Horvat" />
+            </div>
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="email" className="text-sm font-medium">

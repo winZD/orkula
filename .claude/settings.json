@@ -3,6 +3,10 @@
     "CLAUDE_CODE_HIDE_ACCOUNT_INFO": "1"
   },
   "permissions": {
+     "allow": [
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs"
+    ],
     "deny": [
       "Bash(**/.env)",
       "Read(**/.env)",
