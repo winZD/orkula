@@ -56,6 +56,10 @@ export default function Login() {
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     mode: "onBlur",
+    defaultValues: {
+      email: "owner@orkula.dev",
+      password: "password123",
+    },
   });
 
   return (

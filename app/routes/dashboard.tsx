@@ -1,12 +1,14 @@
-import { redirect } from "react-router";
+import { redirect, Form, Outlet } from "react-router";
 import { getSessionUser, clearSessionCookie } from "~/lib/auth.server";
 import type { Route } from "./+types/dashboard";
 import { Button } from "~/components/ui/button";
-import { Form } from "react-router";
-
-export function meta() {
-  return [{ title: "Dashboard" }];
-}
+import {
+  SidebarInset,
+  SidebarProvider,
+  SidebarTrigger,
+} from "~/components/ui/sidebar";
+import { TooltipProvider } from "~/components/ui/tooltip";
+import { AppSidebar } from "~/components/app-sidebar";
 
 export async function loader({ request }: Route.LoaderArgs) {
   const user = await getSessionUser(request);
@@ -22,32 +24,36 @@ export async function action({ request }: Route.ActionArgs) {
   });
 }
 
-export default function Dashboard({ loaderData }: Route.ComponentProps) {
+export default function DashboardLayout({ loaderData }: Route.ComponentProps) {
   const { user } = loaderData;
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex items-center justify-between border-b px-6 py-4">
-        <h1 className="text-xl font-semibold">Orkula</h1>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-muted-foreground">
-            {user.firstName} {user.lastName}
-          </span>
-          <Form method="post">
-            <Button variant="outline" size="sm" type="submit">
-              Logout
-            </Button>
-          </Form>
-        </div>
-      </header>
-      <main className="flex flex-1 flex-col items-center justify-center gap-4 p-6">
-        <h2 className="text-2xl font-bold">
-          Welcome, {user.firstName || "there"}!
-        </h2>
-        <p className="text-muted-foreground">
-          {user.tenant.name} &middot; {user.role}
-        </p>
-      </main>
-    </div>
+    <TooltipProvider>
+      <SidebarProvider>
+        <AppSidebar user={user} />
+        <SidebarInset>
+          <header className="flex h-14 items-center gap-2 border-b border-cream/20 bg-forest px-4 text-cream">
+            <SidebarTrigger className="text-cream hover:text-cream/80" />
+            <div className="flex flex-1 items-center justify-end gap-4">
+              <span className="text-sm text-cream/70">
+                {user.firstName} {user.lastName}
+              </span>
+              <Form method="post">
+                <Button
+                  type="submit"
+                  className="rounded-lg bg-cream text-forest font-semibold hover:opacity-80 hover:bg-cream"
+                  size="sm"
+                >
+                  Logout
+                </Button>
+              </Form>
+            </div>
+          </header>
+          <main className="flex flex-1 flex-col p-6 bg-cream text-forest">
+            <Outlet />
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </TooltipProvider>
   );
 }
