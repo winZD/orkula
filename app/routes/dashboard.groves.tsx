@@ -40,24 +40,24 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
     <div className="flex flex-1 flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Groves</h2>
-          <p className="text-muted-foreground">Manage your olive groves.</p>
+          <h2 className="text-2xl font-bold">Maslinici</h2>
+          <p className="text-muted-foreground">Upravljajte svojim maslinicima.</p>
         </div>
         <Button asChild className="bg-forest text-cream hover:opacity-80 hover:bg-forest">
-          <Link to="/dashboard/groves/new">New Grove</Link>
+          <Link to="/dashboard/groves/new">Novi maslinik</Link>
         </Button>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Location</TableHead>
-            <TableHead>Area (ha)</TableHead>
-            <TableHead>Trees</TableHead>
-            <TableHead>Varieties</TableHead>
-            <TableHead>Harvests</TableHead>
-            <TableHead>Created</TableHead>
+            <TableHead>Naziv</TableHead>
+            <TableHead>Lokacija</TableHead>
+            <TableHead>Površina (ha)</TableHead>
+            <TableHead>Stabla</TableHead>
+            <TableHead>Sorte</TableHead>
+            <TableHead>Berbe</TableHead>
+            <TableHead>Kreirano</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -67,7 +67,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                 colSpan={7}
                 className="text-center text-muted-foreground"
               >
-                No groves found.
+                Nema maslinika.
               </TableCell>
             </TableRow>
           ) : (
@@ -99,7 +99,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
         {groves.length > 0 && (
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={2} className="font-medium">Total</TableCell>
+              <TableCell colSpan={2} className="font-medium">Ukupno</TableCell>
               <TableCell>{groves.reduce((sum, g) => sum + (g.area ?? 0), 0).toFixed(2)}</TableCell>
               <TableCell>{groves.reduce((sum, g) => sum + (g.treeCount ?? 0), 0)}</TableCell>
               <TableCell />

@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { Textarea } from "~/components/ui/textarea";
 
 export function meta() {
   return [{ title: "New Harvest" }];
@@ -76,11 +77,11 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 const METHODS = [
-  { value: "HAND", label: "Hand" },
-  { value: "RAKE", label: "Rake" },
-  { value: "MECHANICAL_SHAKER", label: "Mechanical Shaker" },
+  { value: "HAND", label: "Ručno" },
+  { value: "RAKE", label: "Grablje" },
+  { value: "MECHANICAL_SHAKER", label: "Mehanički tresač" },
   { value: "VIBRATOR", label: "Vibrator" },
-  { value: "NET", label: "Net" },
+  { value: "NET", label: "Mreža" },
 ];
 
 export default function NewHarvest({ loaderData }: Route.ComponentProps) {
@@ -106,8 +107,8 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div>
-        <h2 className="text-2xl font-bold">New Harvest</h2>
-        <p className="text-muted-foreground">Record a new harvest.</p>
+        <h2 className="text-2xl font-bold">Nova berba</h2>
+        <p className="text-muted-foreground">Zabilježite novu berbu.</p>
       </div>
 
       <Form
@@ -120,7 +121,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Grove *</label>
+            <label className="text-sm font-medium">Maslinik *</label>
             <Controller
               name="groveId"
               control={control}
@@ -129,7 +130,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
                   <input type="hidden" name="groveId" value={field.value} />
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a grove" />
+                      <SelectValue placeholder="Odaberite maslinik" />
                     </SelectTrigger>
                     <SelectContent>
                       {groves.map((grove) => (
@@ -150,7 +151,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Method *</label>
+            <label className="text-sm font-medium">Metoda *</label>
             <Controller
               name="method"
               control={control}
@@ -183,7 +184,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label htmlFor="date" className="text-sm font-medium">
-              Date *
+              Datum *
             </label>
             <Input
               id="date"
@@ -199,7 +200,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="quantityKg" className="text-sm font-medium">
-              Quantity (kg) *
+              Količina (kg) *
             </label>
             <Input
               id="quantityKg"
@@ -220,7 +221,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label htmlFor="oilYieldLt" className="text-sm font-medium">
-              Oil Yield (L)
+              Prinos ulja (L)
             </label>
             <Input
               id="oilYieldLt"
@@ -238,7 +239,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="oilYieldPct" className="text-sm font-medium">
-              Oil Yield (%)
+              Prinos ulja (%)
             </label>
             <Input
               id="oilYieldPct"
@@ -258,11 +259,11 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
 
         <div className="flex flex-col gap-1">
           <label htmlFor="notes" className="text-sm font-medium">
-            Notes
+            Bilješke
           </label>
-          <Input
+          <Textarea
             id="notes"
-            placeholder="Optional notes about this harvest"
+            placeholder="Neobavezne bilješke o berbi"
             {...register("notes")}
           />
         </div>
@@ -274,14 +275,14 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
             className="w-full sm:w-auto"
             onClick={() => navigate("/dashboard/harvests")}
           >
-            Cancel
+            Odustani
           </Button>
           <Button
             type="submit"
             disabled={isSubmitting}
             className="w-full sm:w-auto bg-forest text-cream hover:opacity-80 hover:bg-forest"
           >
-            {isSubmitting ? "Creating..." : "Create Harvest"}
+            {isSubmitting ? "Spremanje..." : "Spremi berbu"}
           </Button>
         </div>
       </Form>

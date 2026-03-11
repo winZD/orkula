@@ -15,9 +15,9 @@ import {
 } from "~/components/ui/sidebar";
 
 const navItems = [
-  { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Groves", href: "/dashboard/groves", icon: TreePine },
-  { title: "Harvests", href: "/dashboard/harvests", icon: Wheat },
+  { title: "Nadzorna ploča", href: "/dashboard", icon: LayoutDashboard },
+  { title: "Maslinici", href: "/dashboard/groves", icon: TreePine },
+  { title: "Berbe", href: "/dashboard/harvests", icon: Wheat },
 ];
 
 interface AppSidebarProps {
@@ -42,7 +42,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent className="bg-cream text-forest">
         <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel>Navigacija</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
               {navItems.map((item) => (

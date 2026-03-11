@@ -47,25 +47,25 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
     <div className="flex flex-1 flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Harvests</h2>
-          <p className="text-muted-foreground">Track your harvest records.</p>
+          <h2 className="text-2xl font-bold">Berbe</h2>
+          <p className="text-muted-foreground">Pratite evidenciju berbi.</p>
         </div>
         <Button asChild className="bg-forest text-cream hover:opacity-80 hover:bg-forest">
-          <Link to="/dashboard/harvests/new">New Harvest</Link>
+          <Link to="/dashboard/harvests/new">Nova berba</Link>
         </Button>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>Grove</TableHead>
-            <TableHead>Quantity (kg)</TableHead>
-            <TableHead>Oil Yield (L)</TableHead>
-            <TableHead>Oil Yield (%)</TableHead>
-            <TableHead>Method</TableHead>
-            <TableHead>Notes</TableHead>
-            <TableHead>Recorded By</TableHead>
+            <TableHead>Datum</TableHead>
+            <TableHead>Maslinik</TableHead>
+            <TableHead>Količina (kg)</TableHead>
+            <TableHead>Prinos ulja (L)</TableHead>
+            <TableHead>Prinos ulja (%)</TableHead>
+            <TableHead>Metoda</TableHead>
+            <TableHead>Bilješke</TableHead>
+            <TableHead>Zabilježio/la</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -75,7 +75,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                 colSpan={8}
                 className="text-center text-muted-foreground"
               >
-                No harvests found.
+                Nema berbi.
               </TableCell>
             </TableRow>
           ) : (
@@ -106,7 +106,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
         {harvests.length > 0 && (
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={2} className="font-medium">Total</TableCell>
+              <TableCell colSpan={2} className="font-medium">Ukupno</TableCell>
               <TableCell>{harvests.reduce((sum, h) => sum + h.quantityKg, 0).toFixed(1)}</TableCell>
               <TableCell>{harvests.reduce((sum, h) => sum + (h.oilYieldLt ?? 0), 0).toFixed(1)}</TableCell>
               <TableCell colSpan={4} />

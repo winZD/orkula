@@ -16,7 +16,7 @@ export default function DashboardIndex({ loaderData }: Route.ComponentProps) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4">
       <h2 className="text-2xl font-bold">
-        Welcome, {user?.firstName || "there"}!
+        Dobrodošli, {user?.firstName || "korisniče"}!
       </h2>
       <p className="text-muted-foreground">
         {user?.tenant.name} &middot; {user?.role}

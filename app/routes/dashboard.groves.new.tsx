@@ -61,8 +61,8 @@ export default function NewGrove() {
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div>
-        <h2 className="text-2xl font-bold">New Grove</h2>
-        <p className="text-muted-foreground">Add a new olive grove.</p>
+        <h2 className="text-2xl font-bold">Novi maslinik</h2>
+        <p className="text-muted-foreground">Dodajte novi maslinik.</p>
       </div>
 
       <Form
@@ -75,11 +75,11 @@ export default function NewGrove() {
 
         <div className="flex flex-col gap-1">
           <label htmlFor="name" className="text-sm font-medium">
-            Name *
+            Naziv *
           </label>
           <Input
             id="name"
-            placeholder="e.g. North Hill Grove"
+            placeholder="npr. Sjeverni maslinik"
             aria-invalid={!!errors.name}
             {...register("name")}
           />
@@ -92,11 +92,11 @@ export default function NewGrove() {
 
         <div className="flex flex-col gap-1">
           <label htmlFor="location" className="text-sm font-medium">
-            Location
+            Lokacija
           </label>
           <Input
             id="location"
-            placeholder="e.g. Istria"
+            placeholder="npr. Istra"
             {...register("location")}
           />
         </div>
@@ -104,7 +104,7 @@ export default function NewGrove() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label htmlFor="area" className="text-sm font-medium">
-              Area (ha)
+              Površina (ha)
             </label>
             <Input
               id="area"
@@ -122,7 +122,7 @@ export default function NewGrove() {
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="treeCount" className="text-sm font-medium">
-              Tree Count
+              Broj stabala
             </label>
             <Input
               id="treeCount"
@@ -146,14 +146,14 @@ export default function NewGrove() {
             className="w-full sm:w-auto"
             onClick={() => navigate("/dashboard/groves")}
           >
-            Cancel
+            Odustani
           </Button>
           <Button
             type="submit"
             disabled={isSubmitting}
             className="w-full sm:w-auto bg-forest text-cream hover:opacity-80 hover:bg-forest"
           >
-            {isSubmitting ? "Creating..." : "Create Grove"}
+            {isSubmitting ? "Spremanje..." : "Spremi maslinik"}
           </Button>
         </div>
       </Form>

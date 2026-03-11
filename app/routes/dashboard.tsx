@@ -44,7 +44,7 @@ export default function DashboardLayout({ loaderData }: Route.ComponentProps) {
                   className="rounded-lg bg-cream text-forest font-semibold hover:opacity-80 hover:bg-cream"
                   size="sm"
                 >
-                  Logout
+                  Odjava
                 </Button>
               </Form>
             </div>
