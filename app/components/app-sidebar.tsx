@@ -44,7 +44,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
         <SidebarGroup>
           <SidebarGroupLabel>Navigation</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="gap-1">
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
@@ -64,7 +64,7 @@ export function AppSidebar({ user }: AppSidebarProps) {
         </SidebarGroup>
       </SidebarContent>
       {open && (
-        <SidebarFooter className="border-t px-4 py-3">
+        <SidebarFooter className="border-t px-4 py-3 bg-forest text-cream">
           <div className="text-sm font-medium">
             {user.firstName} {user.lastName}
           </div>
