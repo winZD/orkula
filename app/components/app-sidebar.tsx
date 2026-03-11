@@ -16,8 +16,8 @@ import {
 
 const navItems = [
   { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Groves", href: "/groves", icon: TreePine },
-  { title: "Harvests", href: "/harvests", icon: Wheat },
+  { title: "Groves", href: "/dashboard/groves", icon: TreePine },
+  { title: "Harvests", href: "/dashboard/harvests", icon: Wheat },
 ];
 
 interface AppSidebarProps {
