@@ -1,6 +1,8 @@
+import { Link } from "react-router";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import type { Route } from "./+types/dashboard.groves";
+import { Button } from "~/components/ui/button";
 import {
   Table,
   TableBody,
@@ -36,8 +38,15 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <h2 className="text-2xl font-bold">Groves</h2>
-      <p className="text-muted-foreground">Manage your olive groves.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Groves</h2>
+          <p className="text-muted-foreground">Manage your olive groves.</p>
+        </div>
+        <Button asChild className="bg-forest text-cream hover:opacity-80 hover:bg-forest">
+          <Link to="/dashboard/groves/new">New Grove</Link>
+        </Button>
+      </div>
 
       <Table>
         <TableHeader>

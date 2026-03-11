@@ -7,6 +7,8 @@ export default [
   route("dashboard", "routes/dashboard.tsx", [
     index("routes/dashboard.index.tsx"),
     route("groves", "routes/dashboard.groves.tsx"),
+    route("groves/new", "routes/dashboard.groves.new.tsx"),
     route("harvests", "routes/dashboard.harvests.tsx"),
+    route("harvests/new", "routes/dashboard.harvests.new.tsx"),
   ]),
 ] satisfies RouteConfig;

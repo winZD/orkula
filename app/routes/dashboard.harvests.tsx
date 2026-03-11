@@ -1,6 +1,8 @@
+import { Link } from "react-router";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import type { Route } from "./+types/dashboard.harvests";
+import { Button } from "~/components/ui/button";
 import {
   Table,
   TableBody,
@@ -43,8 +45,15 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <h2 className="text-2xl font-bold">Harvests</h2>
-      <p className="text-muted-foreground">Track your harvest records.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Harvests</h2>
+          <p className="text-muted-foreground">Track your harvest records.</p>
+        </div>
+        <Button asChild className="bg-forest text-cream hover:opacity-80 hover:bg-forest">
+          <Link to="/dashboard/harvests/new">New Harvest</Link>
+        </Button>
+      </div>
 
       <Table>
         <TableHeader>
