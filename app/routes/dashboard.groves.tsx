@@ -5,6 +5,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -86,6 +87,18 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
             ))
           )}
         </TableBody>
+        {groves.length > 0 && (
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={2} className="font-medium">Total</TableCell>
+              <TableCell>{groves.reduce((sum, g) => sum + (g.area ?? 0), 0).toFixed(2)}</TableCell>
+              <TableCell>{groves.reduce((sum, g) => sum + (g.treeCount ?? 0), 0)}</TableCell>
+              <TableCell />
+              <TableCell>{groves.reduce((sum, g) => sum + g._count.harvests, 0)}</TableCell>
+              <TableCell />
+            </TableRow>
+          </TableFooter>
+        )}
       </Table>
     </div>
   );

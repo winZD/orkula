@@ -5,6 +5,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -93,6 +94,16 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
             ))
           )}
         </TableBody>
+        {harvests.length > 0 && (
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={2} className="font-medium">Total</TableCell>
+              <TableCell>{harvests.reduce((sum, h) => sum + h.quantityKg, 0).toFixed(1)}</TableCell>
+              <TableCell>{harvests.reduce((sum, h) => sum + (h.oilYieldLt ?? 0), 0).toFixed(1)}</TableCell>
+              <TableCell colSpan={4} />
+            </TableRow>
+          </TableFooter>
+        )}
       </Table>
     </div>
   );
