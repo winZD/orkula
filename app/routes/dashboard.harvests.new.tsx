@@ -8,6 +8,7 @@ import {
   useNavigate,
   useNavigation,
 } from "react-router";
+import { useTranslation } from "react-i18next";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import { harvestSchema } from "~/lib/validations";
@@ -76,13 +77,7 @@ export async function action({ request }: Route.ActionArgs) {
   return redirect("/dashboard/harvests");
 }
 
-const METHODS = [
-  { value: "HAND", label: "Ručno" },
-  { value: "RAKE", label: "Grablje" },
-  { value: "MECHANICAL_SHAKER", label: "Mehanički tresač" },
-  { value: "VIBRATOR", label: "Vibrator" },
-  { value: "NET", label: "Mreža" },
-];
+const METHOD_KEYS = ["HAND", "RAKE", "MECHANICAL_SHAKER", "VIBRATOR", "NET"] as const;
 
 export default function NewHarvest({ loaderData }: Route.ComponentProps) {
   const { groves } = loaderData;
@@ -90,6 +85,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
   const navigate = useNavigate();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+  const { t } = useTranslation();
 
   const {
     register,
@@ -107,8 +103,8 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div>
-        <h2 className="text-2xl font-bold">Nova berba</h2>
-        <p className="text-muted-foreground">Zabilježite novu berbu.</p>
+        <h2 className="text-2xl font-bold">{t("newHarvest")}</h2>
+        <p className="text-muted-foreground">{t("newHarvestDescription")}</p>
       </div>
 
       <Form
@@ -121,7 +117,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Maslinik *</label>
+            <label className="text-sm font-medium">{t("grove")} *</label>
             <Controller
               name="groveId"
               control={control}
@@ -130,7 +126,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
                   <input type="hidden" name="groveId" value={field.value} />
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Odaberite maslinik" />
+                      <SelectValue placeholder={t("selectGrove")} />
                     </SelectTrigger>
                     <SelectContent>
                       {groves.map((grove) => (
@@ -151,7 +147,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
           </div>
 
           <div className="flex flex-col gap-1">
-            <label className="text-sm font-medium">Metoda *</label>
+            <label className="text-sm font-medium">{t("method")} *</label>
             <Controller
               name="method"
               control={control}
@@ -163,9 +159,9 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {METHODS.map((m) => (
-                        <SelectItem key={m.value} value={m.value}>
-                          {m.label}
+                      {METHOD_KEYS.map((key) => (
+                        <SelectItem key={key} value={key}>
+                          {t(`method.${key}`)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -184,7 +180,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label htmlFor="date" className="text-sm font-medium">
-              Datum *
+              {t("date")} *
             </label>
             <Input
               id="date"
@@ -200,7 +196,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="quantityKg" className="text-sm font-medium">
-              Količina (kg) *
+              {t("quantityKg")} *
             </label>
             <Input
               id="quantityKg"
@@ -221,7 +217,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label htmlFor="oilYieldLt" className="text-sm font-medium">
-              Prinos ulja (L)
+              {t("oilYieldLt")}
             </label>
             <Input
               id="oilYieldLt"
@@ -239,7 +235,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="oilYieldPct" className="text-sm font-medium">
-              Prinos ulja (%)
+              {t("oilYieldPct")}
             </label>
             <Input
               id="oilYieldPct"
@@ -259,11 +255,11 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
 
         <div className="flex flex-col gap-1">
           <label htmlFor="notes" className="text-sm font-medium">
-            Bilješke
+            {t("notes")}
           </label>
           <Textarea
             id="notes"
-            placeholder="Neobavezne bilješke o berbi"
+            placeholder={t("notesPlaceholder")}
             {...register("notes")}
           />
         </div>
@@ -275,14 +271,14 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
             className="w-full sm:w-auto"
             onClick={() => navigate("/dashboard/harvests")}
           >
-            Odustani
+            {t("cancel")}
           </Button>
           <Button
             type="submit"
             disabled={isSubmitting}
             className="w-full sm:w-auto bg-forest text-cream hover:opacity-80 hover:bg-forest"
           >
-            {isSubmitting ? "Spremanje..." : "Spremi berbu"}
+            {isSubmitting ? t("saving") : t("saveHarvest")}
           </Button>
         </div>
       </Form>

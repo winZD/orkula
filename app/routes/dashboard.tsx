@@ -1,4 +1,5 @@
 import { redirect, Form, Outlet } from "react-router";
+import { useTranslation } from "react-i18next";
 import { getSessionUser, clearSessionCookie } from "~/lib/auth.server";
 import type { Route } from "./+types/dashboard";
 import { Button } from "~/components/ui/button";
@@ -26,6 +27,7 @@ export async function action({ request }: Route.ActionArgs) {
 
 export default function DashboardLayout({ loaderData }: Route.ComponentProps) {
   const { user } = loaderData;
+  const { t } = useTranslation();
 
   return (
     <TooltipProvider>
@@ -44,7 +46,7 @@ export default function DashboardLayout({ loaderData }: Route.ComponentProps) {
                   className="rounded-lg bg-cream text-forest font-semibold hover:opacity-80 hover:bg-cream"
                   size="sm"
                 >
-                  Odjava
+                  {t("logout")}
                 </Button>
               </Form>
             </div>

@@ -8,6 +8,7 @@ import {
   useNavigate,
   useNavigation,
 } from "react-router";
+import { useTranslation } from "react-i18next";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import { groveSchema } from "~/lib/validations";
@@ -49,6 +50,7 @@ export default function NewGrove() {
   const navigate = useNavigate();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+  const { t } = useTranslation();
 
   const {
     register,
@@ -61,8 +63,8 @@ export default function NewGrove() {
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div>
-        <h2 className="text-2xl font-bold">Novi maslinik</h2>
-        <p className="text-muted-foreground">Dodajte novi maslinik.</p>
+        <h2 className="text-2xl font-bold">{t("newGrove")}</h2>
+        <p className="text-muted-foreground">{t("newGroveDescription")}</p>
       </div>
 
       <Form
@@ -75,11 +77,11 @@ export default function NewGrove() {
 
         <div className="flex flex-col gap-1">
           <label htmlFor="name" className="text-sm font-medium">
-            Naziv *
+            {t("name")} *
           </label>
           <Input
             id="name"
-            placeholder="npr. Sjeverni maslinik"
+            placeholder={t("namePlaceholder")}
             aria-invalid={!!errors.name}
             {...register("name")}
           />
@@ -92,11 +94,11 @@ export default function NewGrove() {
 
         <div className="flex flex-col gap-1">
           <label htmlFor="location" className="text-sm font-medium">
-            Lokacija
+            {t("location")}
           </label>
           <Input
             id="location"
-            placeholder="npr. Istra"
+            placeholder={t("locationPlaceholder")}
             {...register("location")}
           />
         </div>
@@ -104,7 +106,7 @@ export default function NewGrove() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label htmlFor="area" className="text-sm font-medium">
-              Površina (ha)
+              {t("areaHa")}
             </label>
             <Input
               id="area"
@@ -122,7 +124,7 @@ export default function NewGrove() {
           </div>
           <div className="flex flex-col gap-1">
             <label htmlFor="treeCount" className="text-sm font-medium">
-              Broj stabala
+              {t("trees")}
             </label>
             <Input
               id="treeCount"
@@ -146,14 +148,14 @@ export default function NewGrove() {
             className="w-full sm:w-auto"
             onClick={() => navigate("/dashboard/groves")}
           >
-            Odustani
+            {t("cancel")}
           </Button>
           <Button
             type="submit"
             disabled={isSubmitting}
             className="w-full sm:w-auto bg-forest text-cream hover:opacity-80 hover:bg-forest"
           >
-            {isSubmitting ? "Spremanje..." : "Spremi maslinik"}
+            {isSubmitting ? t("saving") : t("saveGrove")}
           </Button>
         </div>
       </Form>

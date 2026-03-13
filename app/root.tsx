@@ -1,4 +1,6 @@
+import React from "react";
 import {
+  data,
   isRouteErrorResponse,
   Links,
   Meta,
@@ -6,9 +8,16 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
-
+import { useTranslation } from "react-i18next";
 import type { Route } from "./+types/root";
+import {
+  getLocale,
+  i18nextMiddleware,
+  localeCookie,
+} from "./middleware/i18next";
 import "./app.css";
+
+export const middleware = [i18nextMiddleware];
 
 export const links: Route.LinksFunction = () => [
   { rel: "preconnect", href: "https://fonts.googleapis.com" },
@@ -23,9 +32,19 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
+export async function loader({ context }: Route.LoaderArgs) {
+  const locale = getLocale(context);
+  return data(
+    { locale },
+    { headers: { "Set-Cookie": await localeCookie.serialize(locale) } },
+  );
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
+  const { i18n } = useTranslation();
+
   return (
-    <html lang="en">
+    <html lang={i18n.language} dir={i18n.dir(i18n.language)}>
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -42,20 +61,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function App() {
+export default function App({ loaderData }: Route.ComponentProps) {
+  const { i18n } = useTranslation();
+
+  React.useEffect(() => {
+    if (i18n.language !== loaderData.locale) {
+      i18n.changeLanguage(loaderData.locale);
+    }
+  }, [loaderData.locale, i18n]);
+
   return <Outlet />;
 }
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
-  let message = "Oops!";
-  let details = "An unexpected error occurred.";
+  const { t } = useTranslation();
+  let message = t("error.oops");
+  let details = t("error.unexpected");
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? "404" : "Error";
+    message = error.status === 404 ? t("error.404") : t("error.generic");
     details =
       error.status === 404
-        ? "The requested page could not be found."
+        ? t("error.notFound")
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;

@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import type { Route } from "./+types/dashboard.harvests";
@@ -33,39 +34,33 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { harvests };
 }
 
-function formatMethod(method: string) {
-  return method
-    .split("_")
-    .map((w) => w.charAt(0) + w.slice(1).toLowerCase())
-    .join(" ");
-}
-
 export default function Harvests({ loaderData }: Route.ComponentProps) {
   const { harvests } = loaderData;
+  const { t } = useTranslation();
 
   return (
     <div className="flex flex-1 flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Berbe</h2>
-          <p className="text-muted-foreground">Pratite evidenciju berbi.</p>
+          <h2 className="text-2xl font-bold">{t("harvests")}</h2>
+          <p className="text-muted-foreground">{t("harvestsDescription")}</p>
         </div>
         <Button asChild className="bg-forest text-cream hover:opacity-80 hover:bg-forest">
-          <Link to="/dashboard/harvests/new">Nova berba</Link>
+          <Link to="/dashboard/harvests/new">{t("newHarvest")}</Link>
         </Button>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Datum</TableHead>
-            <TableHead>Maslinik</TableHead>
-            <TableHead>Količina (kg)</TableHead>
-            <TableHead>Prinos ulja (L)</TableHead>
-            <TableHead>Prinos ulja (%)</TableHead>
-            <TableHead>Metoda</TableHead>
-            <TableHead>Bilješke</TableHead>
-            <TableHead>Zabilježio/la</TableHead>
+            <TableHead>{t("date")}</TableHead>
+            <TableHead>{t("grove")}</TableHead>
+            <TableHead>{t("quantityKg")}</TableHead>
+            <TableHead>{t("oilYieldLt")}</TableHead>
+            <TableHead>{t("oilYieldPct")}</TableHead>
+            <TableHead>{t("method")}</TableHead>
+            <TableHead>{t("notes")}</TableHead>
+            <TableHead>{t("recordedBy")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -75,7 +70,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                 colSpan={8}
                 className="text-center text-muted-foreground"
               >
-                Nema berbi.
+                {t("noHarvests")}
               </TableCell>
             </TableRow>
           ) : (
@@ -92,7 +87,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                     ? `${harvest.oilYieldPct}%`
                     : "—"}
                 </TableCell>
-                <TableCell>{formatMethod(harvest.method)}</TableCell>
+                <TableCell>{t(`method.${harvest.method}`)}</TableCell>
                 <TableCell className="max-w-48 truncate">
                   {harvest.notes ?? "—"}
                 </TableCell>
@@ -106,7 +101,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
         {harvests.length > 0 && (
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={2} className="font-medium">Ukupno</TableCell>
+              <TableCell colSpan={2} className="font-medium">{t("total")}</TableCell>
               <TableCell>{harvests.reduce((sum, h) => sum + h.quantityKg, 0).toFixed(1)}</TableCell>
               <TableCell>{harvests.reduce((sum, h) => sum + (h.oilYieldLt ?? 0), 0).toFixed(1)}</TableCell>
               <TableCell colSpan={4} />

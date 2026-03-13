@@ -8,6 +8,7 @@ import {
   useActionData,
   useNavigation,
 } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
@@ -37,7 +38,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   const result = await login(parsed.data.email, parsed.data.password);
   if (!result) {
-    return data({ error: "Invalid email or password" }, { status: 401 });
+    return data({ error: "invalidCredentials" }, { status: 401 });
   }
 
   return redirect("/dashboard", {
@@ -49,6 +50,7 @@ export default function Login() {
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+  const { t } = useTranslation();
 
   const {
     register,
@@ -66,17 +68,17 @@ export default function Login() {
     <div className="flex min-h-screen items-center justify-center">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>Enter your credentials to sign in.</CardDescription>
+          <CardTitle>{t("login")}</CardTitle>
+          <CardDescription>{t("loginDescription")}</CardDescription>
         </CardHeader>
         <Form method="post">
           <CardContent className="flex flex-col gap-3">
             {actionData?.error && (
-              <p className="text-sm text-destructive">{actionData.error}</p>
+              <p className="text-sm text-destructive">{t(actionData.error)}</p>
             )}
             <div className="flex flex-col gap-1">
               <label htmlFor="email" className="text-sm font-medium">
-                Email
+                {t("email")}
               </label>
               <Input
                 id="email"
@@ -93,7 +95,7 @@ export default function Login() {
             </div>
             <div className="flex flex-col gap-1">
               <label htmlFor="password" className="text-sm font-medium">
-                Password
+                {t("password")}
               </label>
               <Input
                 id="password"
@@ -116,15 +118,15 @@ export default function Login() {
               className="w-full bg-forest text-cream hover:opacity-80 hover:bg-forest"
               size="lg"
             >
-              {isSubmitting ? "Signing in..." : "Sign in"}
+              {isSubmitting ? t("signingIn") : t("signIn")}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              Don't have an account?{" "}
+              {t("noAccount")}{" "}
               <Link
                 to="/signup"
                 className="text-primary underline-offset-4 hover:underline"
               >
-                Sign up
+                {t("signUp")}
               </Link>
             </p>
           </CardFooter>

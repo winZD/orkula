@@ -11,4 +11,5 @@ export default [
     route("harvests", "routes/dashboard.harvests.tsx"),
     route("harvests/new", "routes/dashboard.harvests.new.tsx"),
   ]),
+  route("set-language", "routes/set-language.ts"),
 ] satisfies RouteConfig;

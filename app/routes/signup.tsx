@@ -8,6 +8,7 @@ import {
   useActionData,
   useNavigation,
 } from "react-router";
+import { useTranslation } from "react-i18next";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
@@ -43,8 +44,8 @@ export async function action({ request }: Route.ActionArgs) {
   } catch (e: unknown) {
     const message =
       e instanceof Error && e.message.includes("Unique constraint")
-        ? "An account with this email already exists"
-        : "Something went wrong. Please try again.";
+        ? "accountExists"
+        : "somethingWentWrong";
     return data({ error: message }, { status: 400 });
   }
 }
@@ -53,6 +54,7 @@ export default function Signup() {
   const actionData = useActionData<typeof action>();
   const navigation = useNavigation();
   const isSubmitting = navigation.state === "submitting";
+  const { t } = useTranslation();
 
   const {
     register,
@@ -66,19 +68,17 @@ export default function Signup() {
     <div className="flex min-h-screen items-center justify-center">
       <Card className="w-full max-w-sm">
         <CardHeader>
-          <CardTitle>Create an account</CardTitle>
-          <CardDescription>
-            Fill in the details below to get started.
-          </CardDescription>
+          <CardTitle>{t("signup")}</CardTitle>
+          <CardDescription>{t("signupDescription")}</CardDescription>
         </CardHeader>
         <Form method="post">
           <CardContent className="flex flex-col gap-3">
             {actionData?.error && (
-              <p className="text-sm text-destructive">{actionData.error}</p>
+              <p className="text-sm text-destructive">{t(actionData.error)}</p>
             )}
             <div className="flex flex-col gap-1">
               <label htmlFor="farmName" className="text-sm font-medium">
-                Farm / Organization name
+                {t("farmName")}
               </label>
               <Input
                 id="farmName"
@@ -96,7 +96,7 @@ export default function Signup() {
             <div className="flex gap-3">
               <div className="flex flex-1 flex-col gap-1">
                 <label htmlFor="firstName" className="text-sm font-medium">
-                  First name
+                  {t("firstName")}
                 </label>
                 <Input
                   id="firstName"
@@ -113,7 +113,7 @@ export default function Signup() {
               </div>
               <div className="flex flex-1 flex-col gap-1">
                 <label htmlFor="lastName" className="text-sm font-medium">
-                  Last name
+                  {t("lastName")}
                 </label>
                 <Input
                   id="lastName"
@@ -131,7 +131,7 @@ export default function Signup() {
             </div>
             <div className="flex flex-col gap-1">
               <label htmlFor="email" className="text-sm font-medium">
-                Email
+                {t("email")}
               </label>
               <Input
                 id="email"
@@ -148,7 +148,7 @@ export default function Signup() {
             </div>
             <div className="flex flex-col gap-1">
               <label htmlFor="password" className="text-sm font-medium">
-                Password
+                {t("password")}
               </label>
               <Input
                 id="password"
@@ -171,15 +171,15 @@ export default function Signup() {
               className="w-full bg-forest text-cream hover:opacity-80 hover:bg-forest"
               size="lg"
             >
-              {isSubmitting ? "Creating account..." : "Create account"}
+              {isSubmitting ? t("creatingAccount") : t("createAccount")}
             </Button>
             <p className="text-center text-sm text-muted-foreground">
-              Already have an account?{" "}
+              {t("alreadyHaveAccount")}{" "}
               <Link
                 to="/login"
                 className="text-primary underline-offset-4 hover:underline"
               >
-                Sign in
+                {t("signIn")}
               </Link>
             </p>
           </CardFooter>

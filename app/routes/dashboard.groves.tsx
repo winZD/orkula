@@ -1,4 +1,5 @@
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import type { Route } from "./+types/dashboard.groves";
@@ -35,29 +36,30 @@ export async function loader({ request }: Route.LoaderArgs) {
 
 export default function Groves({ loaderData }: Route.ComponentProps) {
   const { groves } = loaderData;
+  const { t } = useTranslation();
 
   return (
     <div className="flex flex-1 flex-col gap-4">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Maslinici</h2>
-          <p className="text-muted-foreground">Upravljajte svojim maslinicima.</p>
+          <h2 className="text-2xl font-bold">{t("groves")}</h2>
+          <p className="text-muted-foreground">{t("grovesDescription")}</p>
         </div>
         <Button asChild className="bg-forest text-cream hover:opacity-80 hover:bg-forest">
-          <Link to="/dashboard/groves/new">Novi maslinik</Link>
+          <Link to="/dashboard/groves/new">{t("newGrove")}</Link>
         </Button>
       </div>
 
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Naziv</TableHead>
-            <TableHead>Lokacija</TableHead>
-            <TableHead>Površina (ha)</TableHead>
-            <TableHead>Stabla</TableHead>
-            <TableHead>Sorte</TableHead>
-            <TableHead>Berbe</TableHead>
-            <TableHead>Kreirano</TableHead>
+            <TableHead>{t("name")}</TableHead>
+            <TableHead>{t("location")}</TableHead>
+            <TableHead>{t("areaHa")}</TableHead>
+            <TableHead>{t("trees")}</TableHead>
+            <TableHead>{t("varieties")}</TableHead>
+            <TableHead>{t("harvestCount")}</TableHead>
+            <TableHead>{t("createdAt")}</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -67,7 +69,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                 colSpan={7}
                 className="text-center text-muted-foreground"
               >
-                Nema maslinika.
+                {t("noGroves")}
               </TableCell>
             </TableRow>
           ) : (
@@ -99,7 +101,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
         {groves.length > 0 && (
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={2} className="font-medium">Ukupno</TableCell>
+              <TableCell colSpan={2} className="font-medium">{t("total")}</TableCell>
               <TableCell>{groves.reduce((sum, g) => sum + (g.area ?? 0), 0).toFixed(2)}</TableCell>
               <TableCell>{groves.reduce((sum, g) => sum + (g.treeCount ?? 0), 0)}</TableCell>
               <TableCell />

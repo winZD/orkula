@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router";
 import { LayoutDashboard, TreePine, Wheat } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import {
   Sidebar,
   SidebarContent,
@@ -15,10 +16,10 @@ import {
 } from "~/components/ui/sidebar";
 
 const navItems = [
-  { title: "Nadzorna ploča", href: "/dashboard", icon: LayoutDashboard },
-  { title: "Maslinici", href: "/dashboard/groves", icon: TreePine },
-  { title: "Berbe", href: "/dashboard/harvests", icon: Wheat },
-];
+  { titleKey: "dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { titleKey: "groves", href: "/dashboard/groves", icon: TreePine },
+  { titleKey: "harvests", href: "/dashboard/harvests", icon: Wheat },
+] as const;
 
 interface AppSidebarProps {
   user: {
@@ -32,6 +33,7 @@ interface AppSidebarProps {
 export function AppSidebar({ user }: AppSidebarProps) {
   const location = useLocation();
   const { open } = useSidebar();
+  const { t } = useTranslation();
 
   return (
     <Sidebar collapsible="icon" className="border-r border-forest/20">
@@ -42,19 +44,19 @@ export function AppSidebar({ user }: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent className="bg-cream text-forest">
         <SidebarGroup>
-          <SidebarGroupLabel>Navigacija</SidebarGroupLabel>
+          <SidebarGroupLabel>{t("navigation")}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="gap-1">
               {navItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <SidebarMenuButton
                     asChild
-                    tooltip={item.title}
+                    tooltip={t(item.titleKey)}
                     isActive={location.pathname === item.href}
                   >
                     <Link to={item.href}>
                       <item.icon />
-                      <span>{item.title}</span>
+                      <span>{t(item.titleKey)}</span>
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
