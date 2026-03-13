@@ -87,6 +87,12 @@ export default {
   "validation.groveRequired": "Maslinik je obavezan",
   "validation.dateRequired": "Datum je obavezan",
 
+  // Settings
+  settings: "Postavke",
+  settingsDescription: "Upravljajte postavkama nadzorne ploče.",
+  language: "Jezik",
+  languageDescription: "Odaberite jezik za prikaz nadzorne ploče.",
+
   // Errors
   "error.oops": "Ups!",
   "error.unexpected": "Došlo je do neočekivane greške.",

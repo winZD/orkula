@@ -87,6 +87,12 @@ export default {
   "validation.groveRequired": "Grove is required",
   "validation.dateRequired": "Date is required",
 
+  // Settings
+  settings: "Settings",
+  settingsDescription: "Manage your dashboard settings.",
+  language: "Language",
+  languageDescription: "Choose the language for the dashboard display.",
+
   // Errors
   "error.oops": "Oops!",
   "error.unexpected": "An unexpected error occurred.",

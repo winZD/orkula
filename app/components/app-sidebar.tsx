@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router";
-import { LayoutDashboard, TreePine, Wheat } from "lucide-react";
+import { LayoutDashboard, TreePine, Wheat, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Sidebar,
@@ -65,16 +65,33 @@ export function AppSidebar({ user }: AppSidebarProps) {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      {open && (
-        <SidebarFooter className="border-t px-4 py-3 bg-forest text-cream">
-          <div className="text-sm font-medium">
-            {user.firstName} {user.lastName}
+      <SidebarFooter className="border-t bg-forest text-cream">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              tooltip={t("settings")}
+              isActive={location.pathname === "/dashboard/settings"}
+              className="text-cream hover:bg-cream/10 hover:text-cream data-[active=true]:bg-cream/20 data-[active=true]:text-cream"
+            >
+              <Link to="/dashboard/settings">
+                <Settings />
+                <span>{t("settings")}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+        {open && (
+          <div className="px-2 pb-1">
+            <div className="text-sm font-medium">
+              {user.firstName} {user.lastName}
+            </div>
+            <div className="text-xs text-cream/50">
+              {user.tenant.name} &middot; {user.role}
+            </div>
           </div>
-          <div className="text-xs text-muted-foreground">
-            {user.tenant.name} &middot; {user.role}
-          </div>
-        </SidebarFooter>
-      )}
+        )}
+      </SidebarFooter>
     </Sidebar>
   );
 }

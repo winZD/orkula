@@ -51,7 +51,7 @@ export default function DashboardLayout({ loaderData }: Route.ComponentProps) {
               </Form>
             </div>
           </header>
-          <main className="flex flex-1 flex-col p-6 bg-cream text-forest">
+          <main className="flex flex-1 flex-col p-4 md:p-6 bg-cream text-forest">
             <Outlet />
           </main>
         </SidebarInset>

@@ -13,6 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 
 export function meta() {
   return [{ title: "Groves" }];
@@ -38,6 +39,10 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
   const { groves } = loaderData;
   const { t } = useTranslation();
 
+  const totalArea = groves.reduce((sum, g) => sum + (g.area ?? 0), 0);
+  const totalTrees = groves.reduce((sum, g) => sum + (g.treeCount ?? 0), 0);
+  const totalHarvests = groves.reduce((sum, g) => sum + g._count.harvests, 0);
+
   return (
     <div className="flex flex-1 flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -50,67 +55,115 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
         </Button>
       </div>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>{t("name")}</TableHead>
-            <TableHead>{t("location")}</TableHead>
-            <TableHead>{t("areaHa")}</TableHead>
-            <TableHead>{t("trees")}</TableHead>
-            <TableHead>{t("varieties")}</TableHead>
-            <TableHead>{t("harvestCount")}</TableHead>
-            <TableHead>{t("createdAt")}</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {groves.length === 0 ? (
-            <TableRow>
-              <TableCell
-                colSpan={7}
-                className="text-center text-muted-foreground"
-              >
-                {t("noGroves")}
-              </TableCell>
-            </TableRow>
-          ) : (
-            groves.map((grove) => (
-              <TableRow key={grove.id}>
-                <TableCell className="font-medium">{grove.name}</TableCell>
-                <TableCell>{grove.location ?? "—"}</TableCell>
-                <TableCell>{grove.area ?? "—"}</TableCell>
-                <TableCell>{grove.treeCount ?? "—"}</TableCell>
-                <TableCell>
-                  {grove.varieties.length > 0
-                    ? grove.varieties
-                        .map(
-                          (v) =>
-                            v.variety.charAt(0) +
-                            v.variety.slice(1).toLowerCase(),
-                        )
-                        .join(", ")
-                    : "—"}
-                </TableCell>
-                <TableCell>{grove._count.harvests}</TableCell>
-                <TableCell>
-                  {new Date(grove.createdAt).toLocaleDateString("en-GB").replaceAll("/", ".")}
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-        {groves.length > 0 && (
-          <TableFooter>
-            <TableRow>
-              <TableCell colSpan={2} className="font-medium">{t("total")}</TableCell>
-              <TableCell>{groves.reduce((sum, g) => sum + (g.area ?? 0), 0).toFixed(2)}</TableCell>
-              <TableCell>{groves.reduce((sum, g) => sum + (g.treeCount ?? 0), 0)}</TableCell>
-              <TableCell />
-              <TableCell>{groves.reduce((sum, g) => sum + g._count.harvests, 0)}</TableCell>
-              <TableCell />
-            </TableRow>
-          </TableFooter>
-        )}
-      </Table>
+      {groves.length === 0 ? (
+        <p className="text-center text-muted-foreground py-8">{t("noGroves")}</p>
+      ) : (
+        <>
+          {/* Mobile cards */}
+          <div className="flex flex-col gap-3 md:hidden">
+            {groves.map((grove) => (
+              <Card key={grove.id} size="sm" className="bg-white">
+                <CardHeader>
+                  <CardTitle>{grove.name}</CardTitle>
+                  <span className="text-xs text-forest/50">
+                    {new Date(grove.createdAt).toLocaleDateString("en-GB").replaceAll("/", ".")}
+                  </span>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    <span className="text-forest/60">{t("location")}</span>
+                    <span>{grove.location ?? "—"}</span>
+                    <span className="text-forest/60">{t("areaHa")}</span>
+                    <span>{grove.area ?? "—"}</span>
+                    <span className="text-forest/60">{t("trees")}</span>
+                    <span>{grove.treeCount ?? "—"}</span>
+                    <span className="text-forest/60">{t("varieties")}</span>
+                    <span>
+                      {grove.varieties.length > 0
+                        ? grove.varieties
+                            .map(
+                              (v) =>
+                                v.variety.charAt(0) +
+                                v.variety.slice(1).toLowerCase(),
+                            )
+                            .join(", ")
+                        : "—"}
+                    </span>
+                    <span className="text-forest/60">{t("harvestCount")}</span>
+                    <span>{grove._count.harvests}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            <Card size="sm" className="bg-forest/5">
+              <CardContent>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm font-medium">
+                  <span>{t("total")}</span>
+                  <span />
+                  <span className="text-forest/60">{t("areaHa")}</span>
+                  <span>{totalArea.toFixed(2)}</span>
+                  <span className="text-forest/60">{t("trees")}</span>
+                  <span>{totalTrees}</span>
+                  <span className="text-forest/60">{t("harvestCount")}</span>
+                  <span>{totalHarvests}</span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t("name")}</TableHead>
+                  <TableHead>{t("location")}</TableHead>
+                  <TableHead>{t("areaHa")}</TableHead>
+                  <TableHead>{t("trees")}</TableHead>
+                  <TableHead>{t("varieties")}</TableHead>
+                  <TableHead>{t("harvestCount")}</TableHead>
+                  <TableHead>{t("createdAt")}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {groves.map((grove) => (
+                  <TableRow key={grove.id}>
+                    <TableCell className="font-medium">{grove.name}</TableCell>
+                    <TableCell>{grove.location ?? "—"}</TableCell>
+                    <TableCell>{grove.area ?? "—"}</TableCell>
+                    <TableCell>{grove.treeCount ?? "—"}</TableCell>
+                    <TableCell>
+                      {grove.varieties.length > 0
+                        ? grove.varieties
+                            .map(
+                              (v) =>
+                                v.variety.charAt(0) +
+                                v.variety.slice(1).toLowerCase(),
+                            )
+                            .join(", ")
+                        : "—"}
+                    </TableCell>
+                    <TableCell>{grove._count.harvests}</TableCell>
+                    <TableCell>
+                      {new Date(grove.createdAt).toLocaleDateString("en-GB").replaceAll("/", ".")}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              <TableFooter>
+                <TableRow>
+                  <TableCell colSpan={2} className="font-medium">{t("total")}</TableCell>
+                  <TableCell>{totalArea.toFixed(2)}</TableCell>
+                  <TableCell>{totalTrees}</TableCell>
+                  <TableCell />
+                  <TableCell>{totalHarvests}</TableCell>
+                  <TableCell />
+                </TableRow>
+              </TableFooter>
+            </Table>
+          </div>
+        </>
+      )}
     </div>
   );
 }
