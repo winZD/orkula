@@ -1,6 +1,9 @@
 import { Link } from "react-router";
+import { useTranslation } from "react-i18next";
 
 export function Welcome() {
+  const { t } = useTranslation();
+
   return (
     <div className="flex flex-col h-screen w-full">
       {/* Header */}
@@ -11,13 +14,13 @@ export function Welcome() {
             to="/login"
             className="text-cream hover:opacity-80 transition-opacity text-sm md:text-base"
           >
-            Log in
+            {t("home.login")}
           </Link>
           <Link
             to="/signup"
             className="px-4 md:px-5 py-2 text-sm md:text-base font-semibold rounded-lg transition-opacity hover:opacity-80 bg-cream text-forest"
           >
-            Sign in
+            {t("home.signup")}
           </Link>
         </nav>
       </header>
@@ -35,14 +38,13 @@ export function Welcome() {
         {/* Description Section */}
         <section className="w-full md:w-1/2 flex flex-col justify-center items-start px-8 md:px-16 py-12 md:py-0 gap-6">
           <h1 className="text-4xl md:text-5x mt-7 font-bold text-forest">
-            Orkula
+            {t("home.headline")}
           </h1>
           <p className="text-base md:text-lg leading-relaxed max-w-md text-forest">
-            A modern agriculture management platform. Track your fields, monitor
-            crops, and manage your farm operations all in one place.
+            {t("home.description")}
           </p>
           <button className="mt-2 md:mt-4 px-8 py-3 font-semibold rounded-lg transition-opacity hover:opacity-80 bg-forest text-cream">
-            Get Started
+            {t("home.cta")}
           </button>
         </section>
       </main>

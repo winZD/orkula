@@ -3,8 +3,6 @@ import hr from "~/locales/hr";
 import en from "~/locales/en";
 import { localeCookie } from "~/cookies";
 
-export { localeCookie };
-
 export const [i18nextMiddleware, getLocale, getInstance] =
   createI18nextMiddleware({
     detection: {

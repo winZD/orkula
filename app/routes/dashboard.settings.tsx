@@ -2,7 +2,7 @@ import { useState } from "react";
 import { data, redirect, useFetcher } from "react-router";
 import { useTranslation } from "react-i18next";
 import { getSessionUser } from "~/lib/auth.server";
-import { dashboardLocaleCookie } from "~/cookies";
+import { localeCookie } from "~/cookies";
 import type { Route } from "./+types/dashboard.settings";
 import { Button } from "~/components/ui/button";
 import {
@@ -23,9 +23,9 @@ export async function loader({ request }: Route.LoaderArgs) {
   if (!user) throw redirect("/login");
 
   const cookieHeader = request.headers.get("Cookie");
-  const dashboardLng = await dashboardLocaleCookie.parse(cookieHeader);
+  const lng = await localeCookie.parse(cookieHeader);
 
-  return { currentLanguage: dashboardLng || null };
+  return { currentLanguage: lng || null };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -41,7 +41,7 @@ export async function action({ request }: Route.ActionArgs) {
 
   return data(
     { success: true },
-    { headers: { "Set-Cookie": await dashboardLocaleCookie.serialize(lng) } },
+    { headers: { "Set-Cookie": await localeCookie.serialize(lng) } },
   );
 }
 

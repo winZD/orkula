@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  data,
   isRouteErrorResponse,
   Links,
   Meta,
@@ -13,9 +12,7 @@ import type { Route } from "./+types/root";
 import {
   getLocale,
   i18nextMiddleware,
-  localeCookie,
 } from "./middleware/i18next";
-import { dashboardLocaleCookie } from "./cookies";
 import "./app.css";
 
 export const middleware = [i18nextMiddleware];
@@ -33,27 +30,9 @@ export const links: Route.LinksFunction = () => [
   },
 ];
 
-export async function loader({ request, context }: Route.LoaderArgs) {
+export async function loader({ context }: Route.LoaderArgs) {
   const locale = getLocale(context);
-  const url = new URL(request.url);
-
-  if (url.pathname.startsWith("/dashboard")) {
-    const cookieHeader = request.headers.get("Cookie");
-    const dashboardLng = await dashboardLocaleCookie.parse(cookieHeader);
-    if (dashboardLng && (dashboardLng === "hr" || dashboardLng === "en")) {
-      return data(
-        { locale: dashboardLng },
-        { headers: { "Set-Cookie": await localeCookie.serialize(dashboardLng) } },
-      );
-    }
-  }
-
-  // Non-dashboard routes: use browser language (middleware detection).
-  // Clear the lng cookie so it doesn't override browser detection on future visits.
-  return data(
-    { locale },
-    { headers: { "Set-Cookie": await localeCookie.serialize("", { maxAge: 0 }) } },
-  );
+  return { locale };
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {

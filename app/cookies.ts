@@ -6,10 +6,3 @@ export const localeCookie = createCookie("lng", {
   httpOnly: true,
   maxAge: 60 * 60 * 24 * 365, // 1 year
 });
-
-export const dashboardLocaleCookie = createCookie("dashboard_lng", {
-  path: "/",
-  sameSite: "lax",
-  httpOnly: true,
-  maxAge: 60 * 60 * 24 * 365, // 1 year
-});

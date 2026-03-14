@@ -93,6 +93,14 @@ export default {
   language: "Language",
   languageDescription: "Choose the language for the dashboard display.",
 
+  // Home
+  "home.login": "Log in",
+  "home.signup": "Sign up",
+  "home.headline": "Orkula",
+  "home.description":
+    "A modern agriculture management platform. Track your fields, monitor crops, and manage your farm operations all in one place.",
+  "home.cta": "Get Started",
+
   // Errors
   "error.oops": "Oops!",
   "error.unexpected": "An unexpected error occurred.",

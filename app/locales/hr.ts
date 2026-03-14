@@ -93,6 +93,14 @@ export default {
   language: "Jezik",
   languageDescription: "Odaberite jezik za prikaz nadzorne ploče.",
 
+  // Home
+  "home.login": "Prijava",
+  "home.signup": "Registracija",
+  "home.headline": "Orkula",
+  "home.description":
+    "Moderna platforma za upravljanje poljoprivredom. Pratite svoja polja, nadzirite usjeve i upravljajte svim operacijama na jednom mjestu.",
+  "home.cta": "Započnite",
+
   // Errors
   "error.oops": "Ups!",
   "error.unexpected": "Došlo je do neočekivane greške.",
