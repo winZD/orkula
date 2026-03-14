@@ -20,11 +20,17 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import { loginSchema, type LoginInput } from "~/lib/validations";
-import { login, setSessionCookie } from "~/lib/auth.server";
+import { login, getSessionUser, setSessionCookie } from "~/lib/auth.server";
 import type { Route } from "./+types/login";
 
 export function meta() {
   return [{ title: "Login" }];
+}
+
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await getSessionUser(request);
+  if (user) throw redirect("/dashboard");
+  return null;
 }
 
 export async function action({ request }: Route.ActionArgs) {
