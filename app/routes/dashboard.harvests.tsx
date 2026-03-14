@@ -69,7 +69,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
           {/* Mobile cards */}
           <div className="flex flex-col gap-3 md:hidden">
             {harvests.map((harvest) => (
-              <Card key={harvest.id} size="sm" className="bg-white">
+              <Card key={harvest.id} size="sm" className="bg-cream">
                 <CardHeader>
                   <CardTitle>{harvest.grove.name}</CardTitle>
                   <span className="text-xs text-forest/50">

@@ -62,7 +62,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
           {/* Mobile cards */}
           <div className="flex flex-col gap-3 md:hidden">
             {groves.map((grove) => (
-              <Card key={grove.id} size="sm" className="bg-white">
+              <Card key={grove.id} size="sm" className="bg-cream">
                 <CardHeader>
                   <CardTitle>{grove.name}</CardTitle>
                   <span className="text-xs text-forest/50">
