@@ -1,13 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  data,
-  Form,
-  redirect,
-  useActionData,
-  useNavigate,
-  useNavigation,
-} from "react-router";
+import { data, redirect, useNavigate, useFetcher } from "react-router";
 import { useTranslation } from "react-i18next";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
@@ -46,14 +39,14 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function NewGrove() {
-  const actionData = useActionData<typeof action>();
+  const fetcher = useFetcher<typeof action>();
   const navigate = useNavigate();
-  const navigation = useNavigation();
-  const isSubmitting = navigation.state === "submitting";
+  const isSubmitting = fetcher.state === "submitting";
   const { t } = useTranslation();
 
   const {
     register,
+    handleSubmit,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(groveSchema),
@@ -67,14 +60,16 @@ export default function NewGrove() {
         <p className="text-muted-foreground">{t("newGroveDescription")}</p>
       </div>
 
-      <Form
+      <form
         method="post"
         className="flex flex-col gap-4 max-w-2xl"
-      >
-        {actionData?.error && (
-          <p className="text-sm text-destructive">{t(actionData.error)}</p>
+        onSubmit={handleSubmit((formData) =>
+          fetcher.submit(formData, { method: "post" }),
         )}
-
+      >
+        {fetcher.data && "error" in fetcher.data && (
+          <p className="text-sm text-destructive">{t(fetcher.data.error)}</p>
+        )}
         <div className="flex flex-col gap-1">
           <label htmlFor="name" className="text-sm font-medium">
             {t("name")} *
@@ -158,7 +153,7 @@ export default function NewGrove() {
             {isSubmitting ? t("saving") : t("saveGrove")}
           </Button>
         </div>
-      </Form>
+      </form>
     </div>
   );
 }

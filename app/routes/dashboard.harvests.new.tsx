@@ -2,11 +2,9 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   data,
-  Form,
   redirect,
-  useActionData,
   useNavigate,
-  useNavigation,
+  useFetcher,
 } from "react-router";
 import { useTranslation } from "react-i18next";
 import { db } from "~/db/prisma";
@@ -89,14 +87,14 @@ const METHOD_T_KEY: Record<string, string> = {
 
 export default function NewHarvest({ loaderData }: Route.ComponentProps) {
   const { groves } = loaderData;
-  const actionData = useActionData<typeof action>();
+  const fetcher = useFetcher<typeof action>();
   const navigate = useNavigate();
-  const navigation = useNavigation();
-  const isSubmitting = navigation.state === "submitting";
+  const isSubmitting = fetcher.state === "submitting";
   const { t } = useTranslation();
 
   const {
     register,
+    handleSubmit,
     control,
     formState: { errors },
   } = useForm({
@@ -115,12 +113,15 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
         <p className="text-muted-foreground">{t("newHarvestDescription")}</p>
       </div>
 
-      <Form
+      <form
         method="post"
         className="flex flex-col gap-4 max-w-2xl"
+        onSubmit={handleSubmit((formData) =>
+          fetcher.submit(formData, { method: "post" })
+        )}
       >
-        {actionData?.error && (
-          <p className="text-sm text-destructive">{t(actionData.error)}</p>
+        {fetcher.data && "error" in fetcher.data && (
+          <p className="text-sm text-destructive">{t(fetcher.data.error)}</p>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -130,8 +131,6 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
               name="groveId"
               control={control}
               render={({ field }) => (
-                <>
-                  <input type="hidden" name="groveId" value={field.value} />
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="w-full">
                       <SelectValue placeholder={t("selectGrove")} />
@@ -144,7 +143,6 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
                       ))}
                     </SelectContent>
                   </Select>
-                </>
               )}
             />
             {errors.groveId && (
@@ -160,8 +158,6 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
               name="method"
               control={control}
               render={({ field }) => (
-                <>
-                  <input type="hidden" name="method" value={field.value} />
                   <Select value={field.value} onValueChange={field.onChange}>
                     <SelectTrigger className="w-full">
                       <SelectValue />
@@ -174,7 +170,6 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
                       ))}
                     </SelectContent>
                   </Select>
-                </>
               )}
             />
             {errors.method && (
@@ -289,7 +284,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
             {isSubmitting ? t("saving") : t("saveHarvest")}
           </Button>
         </div>
-      </Form>
+      </form>
     </div>
   );
 }

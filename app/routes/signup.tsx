@@ -2,11 +2,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   data,
-  Form,
   Link,
   redirect,
-  useActionData,
-  useNavigation,
+  useFetcher,
 } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Button } from "~/components/ui/button";
@@ -51,13 +49,13 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Signup() {
-  const actionData = useActionData<typeof action>();
-  const navigation = useNavigation();
-  const isSubmitting = navigation.state === "submitting";
+  const fetcher = useFetcher<typeof action>();
+  const isSubmitting = fetcher.state === "submitting";
   const { t } = useTranslation();
 
   const {
     register,
+    handleSubmit,
     formState: { errors },
   } = useForm<SignupInput>({
     resolver: zodResolver(signupSchema),
@@ -71,10 +69,15 @@ export default function Signup() {
           <CardTitle>{t("signup")}</CardTitle>
           <CardDescription>{t("signupDescription")}</CardDescription>
         </CardHeader>
-        <Form method="post">
+        <form
+          method="post"
+          onSubmit={handleSubmit((formData) =>
+            fetcher.submit(formData, { method: "post" })
+          )}
+        >
           <CardContent className="flex flex-col gap-3">
-            {actionData?.error && (
-              <p className="text-sm text-destructive">{t(actionData.error)}</p>
+            {fetcher.data && "error" in fetcher.data && (
+              <p className="text-sm text-destructive">{t(fetcher.data.error)}</p>
             )}
             <div className="flex flex-col gap-1">
               <label htmlFor="farmName" className="text-sm font-medium">
@@ -183,7 +186,7 @@ export default function Signup() {
               </Link>
             </p>
           </CardFooter>
-        </Form>
+        </form>
       </Card>
     </div>
   );
