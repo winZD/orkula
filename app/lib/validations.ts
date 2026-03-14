@@ -9,7 +9,7 @@ export const signupSchema = z.object({
   farmName: z.string().min(1, "validationFarmNameRequired"),
   firstName: z.string().min(1, "validationFirstNameRequired"),
   lastName: z.string().min(1, "validationLastNameRequired"),
-  email: z.string().email("validationInvalidEmail"),
+  email: z.email("validationInvalidEmail"),
   password: z.string().min(6, "validationPasswordMin"),
 });
 
@@ -20,7 +20,9 @@ const numericField = z
 export const groveSchema = z.object({
   name: z.string().min(1, "validationNameRequired"),
   location: z.string().optional(),
-  area: numericField.pipe(z.number().positive("validationMustBePositive")).optional(),
+  area: numericField
+    .pipe(z.number().positive("validationMustBePositive"))
+    .optional(),
   treeCount: numericField
     .pipe(z.number().int().positive("validationMustBePositive"))
     .optional(),
@@ -29,7 +31,9 @@ export const groveSchema = z.object({
 export const harvestSchema = z.object({
   groveId: z.string().min(1, "validationGroveRequired"),
   date: z.string().min(1, "validationDateRequired"),
-  quantityKg: numericField.pipe(z.number().positive("validationMustBePositive")),
+  quantityKg: numericField.pipe(
+    z.number().positive("validationMustBePositive"),
+  ),
   oilYieldLt: numericField
     .pipe(z.number().positive("validationMustBePositive"))
     .optional(),
@@ -38,7 +42,16 @@ export const harvestSchema = z.object({
   notes: z.string().optional(),
 });
 
+export const addUserSchema = z.object({
+  firstName: z.string().min(1, "validationFirstNameRequired"),
+  lastName: z.string().min(1, "validationLastNameRequired"),
+  email: z.email("validationInvalidEmail"),
+  password: z.string().min(6, "validationPasswordMin"),
+  role: z.enum(["ADMIN", "MEMBER"], { message: "validationInvalidRole" }),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type GroveInput = z.infer<typeof groveSchema>;
 export type HarvestInput = z.infer<typeof harvestSchema>;
+export type AddUserInput = z.infer<typeof addUserSchema>;

@@ -94,6 +94,22 @@ export default {
   language: "Language",
   languageDescription: "Choose the language for the dashboard display.",
 
+  // User management
+  teamMembers: "Team members",
+  teamMembersDescription: "Manage users in your organization.",
+  addUser: "Add user",
+  addUserDescription: "Add a new user to your organization.",
+  role: "Role",
+  roleAdmin: "Admin",
+  roleMember: "Member",
+  roleOwner: "Owner",
+  selectRole: "Select a role",
+  userAdded: "User added successfully.",
+  userEmailExists: "A user with this email already exists.",
+  unauthorizedAction: "You are not authorized to perform this action.",
+  validationInvalidRole: "Invalid role",
+  noTeamMembers: "No other team members.",
+
   // Home
   homeLogin: "Log in",
   homeSignup: "Sign up",

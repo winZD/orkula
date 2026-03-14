@@ -94,6 +94,22 @@ export default {
   language: "Jezik",
   languageDescription: "Odaberite jezik za prikaz nadzorne ploče.",
 
+  // User management
+  teamMembers: "Članovi tima",
+  teamMembersDescription: "Upravljajte korisnicima vaše organizacije.",
+  addUser: "Dodaj korisnika",
+  addUserDescription: "Dodajte novog korisnika u vašu organizaciju.",
+  role: "Uloga",
+  roleAdmin: "Administrator",
+  roleMember: "Član",
+  roleOwner: "Vlasnik",
+  selectRole: "Odaberite ulogu",
+  userAdded: "Korisnik je uspješno dodan.",
+  userEmailExists: "Korisnik s ovom email adresom već postoji.",
+  unauthorizedAction: "Nemate ovlasti za ovu radnju.",
+  validationInvalidRole: "Nevažeća uloga",
+  noTeamMembers: "Nema drugih članova tima.",
+
   // Home
   homeLogin: "Prijava",
   homeSignup: "Registracija",
