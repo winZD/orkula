@@ -70,22 +70,23 @@ export default {
   groveNotFound: "Maslinik nije pronađen",
 
   // Harvest methods
-  "method.HAND": "Ručno",
-  "method.RAKE": "Grablje",
-  "method.MECHANICAL_SHAKER": "Mehanički tresač",
-  "method.VIBRATOR": "Vibrator",
-  "method.NET": "Mreža",
+  methodHand: "Ručno",
+  methodRake: "Grablje",
+  methodMechanicalShaker: "Mehanički tresač",
+  methodVibrator: "Vibrator",
+  methodNet: "Mreža",
 
   // Validation
-  "validation.invalidEmail": "Neispravna email adresa",
-  "validation.passwordMin": "Lozinka mora imati najmanje 6 znakova",
-  "validation.farmNameRequired": "Naziv farme je obavezan",
-  "validation.firstNameRequired": "Ime je obavezno",
-  "validation.lastNameRequired": "Prezime je obavezno",
-  "validation.nameRequired": "Naziv je obavezan",
-  "validation.mustBePositive": "Mora biti pozitivan broj",
-  "validation.groveRequired": "Maslinik je obavezan",
-  "validation.dateRequired": "Datum je obavezan",
+  validationInvalidEmail: "Neispravna email adresa",
+  validationPasswordMin: "Lozinka mora imati najmanje 6 znakova",
+  validationFarmNameRequired: "Naziv farme je obavezan",
+  validationFirstNameRequired: "Ime je obavezno",
+  validationLastNameRequired: "Prezime je obavezno",
+  validationNameRequired: "Naziv je obavezan",
+  validationMustBePositive: "Mora biti pozitivan broj",
+  validationGroveRequired: "Maslinik je obavezan",
+  validationDateRequired: "Datum je obavezan",
+  validationInvalidLanguage: "Nevažeći jezik",
 
   // Settings
   settings: "Postavke",
@@ -94,17 +95,17 @@ export default {
   languageDescription: "Odaberite jezik za prikaz nadzorne ploče.",
 
   // Home
-  "home.login": "Prijava",
-  "home.signup": "Registracija",
-  "home.headline": "Orkula",
-  "home.description":
+  homeLogin: "Prijava",
+  homeSignup: "Registracija",
+  homeHeadline: "Orkula",
+  homeDescription:
     "Moderna platforma za upravljanje poljoprivredom. Pratite svoja polja, nadzirite usjeve i upravljajte svim operacijama na jednom mjestu.",
-  "home.cta": "Započnite",
+  homeCta: "Započnite",
 
   // Errors
-  "error.oops": "Ups!",
-  "error.unexpected": "Došlo je do neočekivane greške.",
-  "error.notFound": "Tražena stranica nije pronađena.",
-  "error.404": "404",
-  "error.generic": "Greška",
+  errorOops: "Ups!",
+  errorUnexpected: "Došlo je do neočekivane greške.",
+  errorNotFound: "Tražena stranica nije pronađena.",
+  error404: "404",
+  errorGeneric: "Greška",
 } as const;

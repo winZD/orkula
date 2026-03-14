@@ -1,16 +1,16 @@
 import { z } from "zod";
 
 export const loginSchema = z.object({
-  email: z.email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  email: z.email("validationInvalidEmail"),
+  password: z.string().min(6, "validationPasswordMin"),
 });
 
 export const signupSchema = z.object({
-  farmName: z.string().min(1, "Farm name is required"),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  farmName: z.string().min(1, "validationFarmNameRequired"),
+  firstName: z.string().min(1, "validationFirstNameRequired"),
+  lastName: z.string().min(1, "validationLastNameRequired"),
+  email: z.string().email("validationInvalidEmail"),
+  password: z.string().min(6, "validationPasswordMin"),
 });
 
 const numericField = z
@@ -18,20 +18,20 @@ const numericField = z
   .pipe(z.number());
 
 export const groveSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1, "validationNameRequired"),
   location: z.string().optional(),
-  area: numericField.pipe(z.number().positive("Must be positive")).optional(),
+  area: numericField.pipe(z.number().positive("validationMustBePositive")).optional(),
   treeCount: numericField
-    .pipe(z.number().int().positive("Must be positive"))
+    .pipe(z.number().int().positive("validationMustBePositive"))
     .optional(),
 });
 
 export const harvestSchema = z.object({
-  groveId: z.string().min(1, "Grove is required"),
-  date: z.string().min(1, "Date is required"),
-  quantityKg: numericField.pipe(z.number().positive("Must be positive")),
+  groveId: z.string().min(1, "validationGroveRequired"),
+  date: z.string().min(1, "validationDateRequired"),
+  quantityKg: numericField.pipe(z.number().positive("validationMustBePositive")),
   oilYieldLt: numericField
-    .pipe(z.number().positive("Must be positive"))
+    .pipe(z.number().positive("validationMustBePositive"))
     .optional(),
   oilYieldPct: numericField.pipe(z.number().min(0).max(100)).optional(),
   method: z.enum(["HAND", "RAKE", "MECHANICAL_SHAKER", "VIBRATOR", "NET"]),

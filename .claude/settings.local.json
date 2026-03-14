@@ -1,8 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(npm install:*)",
-      "Bash(npx shadcn@latest:*)"
+      "Bash(cd \"C:\\\\Users\\\\Ivan\\\\Desktop\\\\MY PROJECTS\\\\orkula\" && npm run typecheck 2>&1)"
     ]
   }
 }

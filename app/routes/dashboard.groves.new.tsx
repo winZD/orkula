@@ -69,10 +69,10 @@ export default function NewGrove() {
 
       <Form
         method="post"
-        className="flex flex-col gap-4 max-w-2xl [&_input]:bg-white **:data-[slot=select-trigger]:bg-white"
+        className="flex flex-col gap-4 max-w-2xl"
       >
         {actionData?.error && (
-          <p className="text-sm text-destructive">{actionData.error}</p>
+          <p className="text-sm text-destructive">{t(actionData.error)}</p>
         )}
 
         <div className="flex flex-col gap-1">
@@ -87,7 +87,7 @@ export default function NewGrove() {
           />
           {errors.name && (
             <p className="text-xs text-destructive">
-              {errors.name.message as string}
+              {t(errors.name.message as string)}
             </p>
           )}
         </div>
@@ -118,7 +118,7 @@ export default function NewGrove() {
             />
             {errors.area && (
               <p className="text-xs text-destructive">
-                {errors.area.message as string}
+                {t(errors.area.message as string)}
               </p>
             )}
           </div>
@@ -135,7 +135,7 @@ export default function NewGrove() {
             />
             {errors.treeCount && (
               <p className="text-xs text-destructive">
-                {errors.treeCount.message as string}
+                {t(errors.treeCount.message as string)}
               </p>
             )}
           </div>

@@ -57,7 +57,7 @@ export async function action({ request }: Route.ActionArgs) {
     where: { id: parsed.data.groveId, tenantId: user.tenantId },
   });
   if (!grove) {
-    return data({ error: "Grove not found" }, { status: 400 });
+    return data({ error: "groveNotFound" }, { status: 400 });
   }
 
   await db.harvest.create({
@@ -78,6 +78,14 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 const METHOD_KEYS = ["HAND", "RAKE", "MECHANICAL_SHAKER", "VIBRATOR", "NET"] as const;
+
+const METHOD_T_KEY: Record<string, string> = {
+  HAND: "methodHand",
+  RAKE: "methodRake",
+  MECHANICAL_SHAKER: "methodMechanicalShaker",
+  VIBRATOR: "methodVibrator",
+  NET: "methodNet",
+};
 
 export default function NewHarvest({ loaderData }: Route.ComponentProps) {
   const { groves } = loaderData;
@@ -109,10 +117,10 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
 
       <Form
         method="post"
-        className="flex flex-col gap-4 max-w-2xl [&_input]:bg-white **:data-[slot=select-trigger]:bg-white"
+        className="flex flex-col gap-4 max-w-2xl"
       >
         {actionData?.error && (
-          <p className="text-sm text-destructive">{actionData.error}</p>
+          <p className="text-sm text-destructive">{t(actionData.error)}</p>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -141,7 +149,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
             />
             {errors.groveId && (
               <p className="text-xs text-destructive">
-                {errors.groveId.message as string}
+                {t(errors.groveId.message as string)}
               </p>
             )}
           </div>
@@ -161,7 +169,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
                     <SelectContent>
                       {METHOD_KEYS.map((key) => (
                         <SelectItem key={key} value={key}>
-                          {t(`method.${key}`)}
+                          {t(METHOD_T_KEY[key])}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -171,7 +179,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
             />
             {errors.method && (
               <p className="text-xs text-destructive">
-                {errors.method.message as string}
+                {t(errors.method.message as string)}
               </p>
             )}
           </div>
@@ -190,7 +198,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
             />
             {errors.date && (
               <p className="text-xs text-destructive">
-                {errors.date.message as string}
+                {t(errors.date.message as string)}
               </p>
             )}
           </div>
@@ -208,7 +216,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
             />
             {errors.quantityKg && (
               <p className="text-xs text-destructive">
-                {errors.quantityKg.message as string}
+                {t(errors.quantityKg.message as string)}
               </p>
             )}
           </div>
@@ -229,7 +237,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
             />
             {errors.oilYieldLt && (
               <p className="text-xs text-destructive">
-                {errors.oilYieldLt.message as string}
+                {t(errors.oilYieldLt.message as string)}
               </p>
             )}
           </div>
@@ -247,7 +255,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
             />
             {errors.oilYieldPct && (
               <p className="text-xs text-destructive">
-                {errors.oilYieldPct.message as string}
+                {t(errors.oilYieldPct.message as string)}
               </p>
             )}
           </div>

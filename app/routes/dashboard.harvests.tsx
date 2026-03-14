@@ -1,5 +1,13 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
+
+const METHOD_T_KEY: Record<string, string> = {
+  HAND: "methodHand",
+  RAKE: "methodRake",
+  MECHANICAL_SHAKER: "methodMechanicalShaker",
+  VIBRATOR: "methodVibrator",
+  NET: "methodNet",
+};
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import type { Route } from "./+types/dashboard.harvests";
@@ -79,7 +87,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                       {harvest.oilYieldPct != null ? `${harvest.oilYieldPct}%` : "—"}
                     </span>
                     <span className="text-forest/60">{t("method")}</span>
-                    <span>{t(`method.${harvest.method}`)}</span>
+                    <span>{t(METHOD_T_KEY[harvest.method])}</span>
                     {harvest.notes && (
                       <>
                         <span className="text-forest/60">{t("notes")}</span>
@@ -137,7 +145,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                         ? `${harvest.oilYieldPct}%`
                         : "—"}
                     </TableCell>
-                    <TableCell>{t(`method.${harvest.method}`)}</TableCell>
+                    <TableCell>{t(METHOD_T_KEY[harvest.method])}</TableCell>
                     <TableCell className="max-w-48 truncate">
                       {harvest.notes ?? "—"}
                     </TableCell>

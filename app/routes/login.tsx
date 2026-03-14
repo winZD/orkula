@@ -95,7 +95,7 @@ export default function Login() {
               />
               {errors.email && (
                 <p className="text-xs text-destructive">
-                  {errors.email.message}
+                  {t(errors.email.message!)}
                 </p>
               )}
             </div>
@@ -112,7 +112,7 @@ export default function Login() {
               />
               {errors.password && (
                 <p className="text-xs text-destructive">
-                  {errors.password.message}
+                  {t(errors.password.message!)}
                 </p>
               )}
             </div>

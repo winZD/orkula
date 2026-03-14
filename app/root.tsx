@@ -70,15 +70,15 @@ export default function App({ loaderData }: Route.ComponentProps) {
 
 export function ErrorBoundary({ error }: Route.ErrorBoundaryProps) {
   const { t } = useTranslation();
-  let message = t("error.oops");
-  let details = t("error.unexpected");
+  let message = t("errorOops");
+  let details = t("errorUnexpected");
   let stack: string | undefined;
 
   if (isRouteErrorResponse(error)) {
-    message = error.status === 404 ? t("error.404") : t("error.generic");
+    message = error.status === 404 ? t("error404") : t("errorGeneric");
     details =
       error.status === 404
-        ? t("error.notFound")
+        ? t("errorNotFound")
         : error.statusText || details;
   } else if (import.meta.env.DEV && error && error instanceof Error) {
     details = error.message;

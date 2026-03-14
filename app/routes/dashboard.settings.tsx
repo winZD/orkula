@@ -36,7 +36,7 @@ export async function action({ request }: Route.ActionArgs) {
   const lng = formData.get("lng");
 
   if (lng !== "hr" && lng !== "en") {
-    return data({ error: "Invalid language" }, { status: 400 });
+    return data({ error: "validationInvalidLanguage" }, { status: 400 });
   }
 
   return data(
@@ -65,7 +65,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
         <p className="text-muted-foreground">{t("settingsDescription")}</p>
       </div>
 
-      <div className="flex flex-col gap-4 max-w-2xl *:data-[slot=select-trigger]:bg-white">
+      <div className="flex flex-col gap-4 max-w-2xl">
         <div className="flex flex-col gap-1">
           <label htmlFor="language-select" className="text-sm font-medium">
             {t("language")}

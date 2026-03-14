@@ -89,7 +89,7 @@ export default function Signup() {
               />
               {errors.farmName && (
                 <p className="text-xs text-destructive">
-                  {errors.farmName.message}
+                  {t(errors.farmName.message!)}
                 </p>
               )}
             </div>
@@ -107,7 +107,7 @@ export default function Signup() {
                 />
                 {errors.firstName && (
                   <p className="text-xs text-destructive">
-                    {errors.firstName.message}
+                    {t(errors.firstName.message!)}
                   </p>
                 )}
               </div>
@@ -124,7 +124,7 @@ export default function Signup() {
                 />
                 {errors.lastName && (
                   <p className="text-xs text-destructive">
-                    {errors.lastName.message}
+                    {t(errors.lastName.message!)}
                   </p>
                 )}
               </div>
@@ -142,7 +142,7 @@ export default function Signup() {
               />
               {errors.email && (
                 <p className="text-xs text-destructive">
-                  {errors.email.message}
+                  {t(errors.email.message!)}
                 </p>
               )}
             </div>
@@ -159,7 +159,7 @@ export default function Signup() {
               />
               {errors.password && (
                 <p className="text-xs text-destructive">
-                  {errors.password.message}
+                  {t(errors.password.message!)}
                 </p>
               )}
             </div>

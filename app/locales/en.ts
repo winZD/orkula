@@ -70,22 +70,23 @@ export default {
   groveNotFound: "Grove not found",
 
   // Harvest methods
-  "method.HAND": "Hand",
-  "method.RAKE": "Rake",
-  "method.MECHANICAL_SHAKER": "Mechanical shaker",
-  "method.VIBRATOR": "Vibrator",
-  "method.NET": "Net",
+  methodHand: "Hand",
+  methodRake: "Rake",
+  methodMechanicalShaker: "Mechanical shaker",
+  methodVibrator: "Vibrator",
+  methodNet: "Net",
 
   // Validation
-  "validation.invalidEmail": "Invalid email address",
-  "validation.passwordMin": "Password must be at least 6 characters",
-  "validation.farmNameRequired": "Farm name is required",
-  "validation.firstNameRequired": "First name is required",
-  "validation.lastNameRequired": "Last name is required",
-  "validation.nameRequired": "Name is required",
-  "validation.mustBePositive": "Must be a positive number",
-  "validation.groveRequired": "Grove is required",
-  "validation.dateRequired": "Date is required",
+  validationInvalidEmail: "Invalid email address",
+  validationPasswordMin: "Password must be at least 6 characters",
+  validationFarmNameRequired: "Farm name is required",
+  validationFirstNameRequired: "First name is required",
+  validationLastNameRequired: "Last name is required",
+  validationNameRequired: "Name is required",
+  validationMustBePositive: "Must be a positive number",
+  validationGroveRequired: "Grove is required",
+  validationDateRequired: "Date is required",
+  validationInvalidLanguage: "Invalid language",
 
   // Settings
   settings: "Settings",
@@ -94,17 +95,17 @@ export default {
   languageDescription: "Choose the language for the dashboard display.",
 
   // Home
-  "home.login": "Log in",
-  "home.signup": "Sign up",
-  "home.headline": "Orkula",
-  "home.description":
+  homeLogin: "Log in",
+  homeSignup: "Sign up",
+  homeHeadline: "Orkula",
+  homeDescription:
     "A modern agriculture management platform. Track your fields, monitor crops, and manage your farm operations all in one place.",
-  "home.cta": "Get Started",
+  homeCta: "Get Started",
 
   // Errors
-  "error.oops": "Oops!",
-  "error.unexpected": "An unexpected error occurred.",
-  "error.notFound": "The requested page could not be found.",
-  "error.404": "404",
-  "error.generic": "Error",
+  errorOops: "Oops!",
+  errorUnexpected: "An unexpected error occurred.",
+  errorNotFound: "The requested page could not be found.",
+  error404: "404",
+  errorGeneric: "Error",
 } as const;
