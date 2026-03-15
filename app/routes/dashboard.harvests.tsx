@@ -1,5 +1,6 @@
-import { Link } from "react-router";
+import { Link, useFetcher, data } from "react-router";
 import { useTranslation } from "react-i18next";
+import { Pencil, Trash2 } from "lucide-react";
 
 const METHOD_T_KEY: Record<string, string> = {
   HAND: "methodHand",
@@ -22,6 +23,17 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 
 export function meta() {
   return [{ title: "Harvests" }];
@@ -43,9 +55,36 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { harvests };
 }
 
+export async function action({ request }: Route.ActionArgs) {
+  const user = await getSessionUser(request);
+  if (!user) throw new Response("Unauthorized", { status: 401 });
+
+  const formData = await request.formData();
+  const intent = formData.get("intent");
+
+  if (intent === "deleteHarvest") {
+    const harvestId = formData.get("harvestId") as string;
+
+    const harvest = await db.harvest.findFirst({
+      where: { id: harvestId, tenantId: user.tenantId },
+    });
+
+    if (!harvest) {
+      return data({ error: "harvestNotFound" }, { status: 404 });
+    }
+
+    await db.harvest.delete({ where: { id: harvestId } });
+
+    return data({ success: true });
+  }
+
+  return data({ error: "invalidIntent" }, { status: 400 });
+}
+
 export default function Harvests({ loaderData }: Route.ComponentProps) {
   const { harvests } = loaderData;
   const { t } = useTranslation();
+  const fetcher = useFetcher<typeof action>();
 
   const totalQuantity = harvests.reduce((sum, h) => sum + h.quantityKg, 0);
   const totalOil = harvests.reduce((sum, h) => sum + (h.oilYieldLt ?? 0), 0);
@@ -71,10 +110,50 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
             {harvests.map((harvest) => (
               <Card key={harvest.id} size="sm" className="bg-cream">
                 <CardHeader>
-                  <CardTitle>{harvest.grove.name}</CardTitle>
-                  <span className="text-xs text-forest/50">
-                    {new Date(harvest.date).toLocaleDateString("en-GB").replaceAll("/", ".")}
-                  </span>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle>{harvest.grove.name}</CardTitle>
+                      <span className="text-xs text-forest/50">
+                        {new Date(harvest.date).toLocaleDateString("en-GB").replaceAll("/", ".")}
+                      </span>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+                        <Link to={`/dashboard/harvests/${harvest.id}/edit`}>
+                          <Pencil className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t("deleteHarvestConfirmTitle")}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t("deleteHarvestConfirmDescription")}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                            <AlertDialogAction
+                              variant="destructive"
+                              onClick={() => {
+                                fetcher.submit(
+                                  { intent: "deleteHarvest", harvestId: harvest.id },
+                                  { method: "post" },
+                                );
+                              }}
+                            >
+                              {t("confirm")}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
@@ -129,6 +208,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                   <TableHead>{t("method")}</TableHead>
                   <TableHead>{t("notes")}</TableHead>
                   <TableHead>{t("recordedBy")}</TableHead>
+                  <TableHead className="w-24" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -152,6 +232,44 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                     <TableCell>
                       {harvest.recordedBy.firstName} {harvest.recordedBy.lastName}
                     </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+                          <Link to={`/dashboard/harvests/${harvest.id}/edit`}>
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{t("deleteHarvestConfirmTitle")}</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t("deleteHarvestConfirmDescription")}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                              <AlertDialogAction
+                                variant="destructive"
+                                onClick={() => {
+                                  fetcher.submit(
+                                    { intent: "deleteHarvest", harvestId: harvest.id },
+                                    { method: "post" },
+                                  );
+                                }}
+                              >
+                                {t("confirm")}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -160,7 +278,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                   <TableCell colSpan={2} className="font-medium">{t("total")}</TableCell>
                   <TableCell>{totalQuantity.toFixed(1)}</TableCell>
                   <TableCell>{totalOil.toFixed(1)}</TableCell>
-                  <TableCell colSpan={4} />
+                  <TableCell colSpan={5} />
                 </TableRow>
               </TableFooter>
             </Table>

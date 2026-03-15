@@ -1,5 +1,6 @@
-import { Link } from "react-router";
+import { Link, useFetcher, data } from "react-router";
 import { useTranslation } from "react-i18next";
+import { Pencil, Trash2 } from "lucide-react";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import type { Route } from "./+types/dashboard.groves";
@@ -14,6 +15,17 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 
 export function meta() {
   return [{ title: "Groves" }];
@@ -35,9 +47,36 @@ export async function loader({ request }: Route.LoaderArgs) {
   return { groves };
 }
 
+export async function action({ request }: Route.ActionArgs) {
+  const user = await getSessionUser(request);
+  if (!user) throw new Response("Unauthorized", { status: 401 });
+
+  const formData = await request.formData();
+  const intent = formData.get("intent");
+
+  if (intent === "deleteGrove") {
+    const groveId = formData.get("groveId") as string;
+
+    const grove = await db.grove.findFirst({
+      where: { id: groveId, tenantId: user.tenantId },
+    });
+
+    if (!grove) {
+      return data({ error: "groveNotFound" }, { status: 404 });
+    }
+
+    await db.grove.delete({ where: { id: groveId } });
+
+    return data({ success: true });
+  }
+
+  return data({ error: "invalidIntent" }, { status: 400 });
+}
+
 export default function Groves({ loaderData }: Route.ComponentProps) {
   const { groves } = loaderData;
   const { t } = useTranslation();
+  const fetcher = useFetcher<typeof action>();
 
   const totalArea = groves.reduce((sum, g) => sum + (g.area ?? 0), 0);
   const totalTrees = groves.reduce((sum, g) => sum + (g.treeCount ?? 0), 0);
@@ -64,10 +103,50 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
             {groves.map((grove) => (
               <Card key={grove.id} size="sm" className="bg-cream">
                 <CardHeader>
-                  <CardTitle>{grove.name}</CardTitle>
-                  <span className="text-xs text-forest/50">
-                    {new Date(grove.createdAt).toLocaleDateString("en-GB").replaceAll("/", ".")}
-                  </span>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle>{grove.name}</CardTitle>
+                      <span className="text-xs text-forest/50">
+                        {new Date(grove.createdAt).toLocaleDateString("en-GB").replaceAll("/", ".")}
+                      </span>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+                        <Link to={`/dashboard/groves/${grove.id}/edit`}>
+                          <Pencil className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>{t("deleteGroveConfirmTitle")}</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              {t("deleteGroveConfirmDescription")}
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                            <AlertDialogAction
+                              variant="destructive"
+                              onClick={() => {
+                                fetcher.submit(
+                                  { intent: "deleteGrove", groveId: grove.id },
+                                  { method: "post" },
+                                );
+                              }}
+                            >
+                              {t("confirm")}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
@@ -123,6 +202,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                   <TableHead>{t("varieties")}</TableHead>
                   <TableHead>{t("harvestCount")}</TableHead>
                   <TableHead>{t("createdAt")}</TableHead>
+                  <TableHead className="w-24" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -147,6 +227,44 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                     <TableCell>
                       {new Date(grove.createdAt).toLocaleDateString("en-GB").replaceAll("/", ".")}
                     </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+                          <Link to={`/dashboard/groves/${grove.id}/edit`}>
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>{t("deleteGroveConfirmTitle")}</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {t("deleteGroveConfirmDescription")}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                              <AlertDialogAction
+                                variant="destructive"
+                                onClick={() => {
+                                  fetcher.submit(
+                                    { intent: "deleteGrove", groveId: grove.id },
+                                    { method: "post" },
+                                  );
+                                }}
+                              >
+                                {t("confirm")}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -157,7 +275,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                   <TableCell>{totalTrees}</TableCell>
                   <TableCell />
                   <TableCell>{totalHarvests}</TableCell>
-                  <TableCell />
+                  <TableCell colSpan={2} />
                 </TableRow>
               </TableFooter>
             </Table>

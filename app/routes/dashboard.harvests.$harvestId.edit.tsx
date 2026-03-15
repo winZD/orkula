@@ -1,18 +1,12 @@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  data,
-  redirect,
-  useNavigate,
-  useFetcher,
-  Link,
-} from "react-router";
+import { data, redirect, useNavigate, useFetcher, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { ArrowLeft } from "lucide-react";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import { harvestSchema } from "~/lib/validations";
-import type { Route } from "./+types/dashboard.harvests.new";
+import type { Route } from "./+types/dashboard.harvests.$harvestId.edit";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 import {
@@ -25,12 +19,18 @@ import {
 import { Textarea } from "~/components/ui/textarea";
 
 export function meta() {
-  return [{ title: "New Harvest" }];
+  return [{ title: "Edit Harvest" }];
 }
 
-export async function loader({ request }: Route.LoaderArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   const user = await getSessionUser(request);
-  if (!user) throw new Response("Unauthorized", { status: 401 });
+  if (!user) throw redirect("/login");
+
+  const harvest = await db.harvest.findFirst({
+    where: { id: params.harvestId, tenantId: user.tenantId },
+  });
+
+  if (!harvest) throw redirect("/dashboard/harvests");
 
   const groves = await db.grove.findMany({
     where: { tenantId: user.tenantId },
@@ -38,12 +38,20 @@ export async function loader({ request }: Route.LoaderArgs) {
     orderBy: { name: "asc" },
   });
 
-  return { groves };
+  return { harvest, groves };
 }
 
-export async function action({ request }: Route.ActionArgs) {
+export async function action({ request, params }: Route.ActionArgs) {
   const user = await getSessionUser(request);
-  if (!user) throw new Response("Unauthorized", { status: 401 });
+  if (!user) throw redirect("/login");
+
+  const harvest = await db.harvest.findFirst({
+    where: { id: params.harvestId, tenantId: user.tenantId },
+  });
+
+  if (!harvest) {
+    return data({ error: "harvestNotFound" }, { status: 404 });
+  }
 
   const formData = await request.formData();
   const raw = Object.fromEntries(formData);
@@ -60,7 +68,8 @@ export async function action({ request }: Route.ActionArgs) {
     return data({ error: "groveNotFound" }, { status: 400 });
   }
 
-  await db.harvest.create({
+  await db.harvest.update({
+    where: { id: harvest.id },
     data: {
       date: new Date(parsed.data.date),
       quantityKg: parsed.data.quantityKg,
@@ -69,8 +78,6 @@ export async function action({ request }: Route.ActionArgs) {
       method: parsed.data.method,
       notes: parsed.data.notes || null,
       groveId: parsed.data.groveId,
-      recordedById: user.id,
-      tenantId: user.tenantId,
     },
   });
 
@@ -87,12 +94,14 @@ const METHOD_T_KEY: Record<string, string> = {
   NET: "methodNet",
 };
 
-export default function NewHarvest({ loaderData }: Route.ComponentProps) {
-  const { groves } = loaderData;
+export default function EditHarvest({ loaderData }: Route.ComponentProps) {
+  const { harvest, groves } = loaderData;
   const fetcher = useFetcher<typeof action>();
   const navigate = useNavigate();
   const isSubmitting = fetcher.state === "submitting";
   const { t } = useTranslation();
+
+  const dateStr = new Date(harvest.date).toISOString().split("T")[0];
 
   const {
     register,
@@ -103,8 +112,13 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
     resolver: zodResolver(harvestSchema),
     mode: "onBlur",
     defaultValues: {
-      groveId: "",
-      method: "HAND" as const,
+      groveId: harvest.groveId,
+      method: harvest.method as "HAND" | "RAKE" | "MECHANICAL_SHAKER" | "VIBRATOR" | "NET",
+      date: dateStr,
+      quantityKg: harvest.quantityKg,
+      oilYieldLt: harvest.oilYieldLt ?? undefined,
+      oilYieldPct: harvest.oilYieldPct ?? undefined,
+      notes: harvest.notes ?? "",
     },
   });
 
@@ -115,8 +129,8 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
           <ArrowLeft className="h-4 w-4" />
           {t("back")}
         </Link>
-        <h2 className="text-2xl font-bold">{t("newHarvest")}</h2>
-        <p className="text-muted-foreground">{t("newHarvestDescription")}</p>
+        <h2 className="text-2xl font-bold">{t("editHarvest")}</h2>
+        <p className="text-muted-foreground">{t("editHarvestDescription")}</p>
       </div>
 
       <form
@@ -292,7 +306,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
             disabled={isSubmitting}
             className="w-full sm:w-auto bg-forest text-cream hover:opacity-80 hover:bg-forest"
           >
-            {isSubmitting ? t("saving") : t("saveHarvest")}
+            {isSubmitting ? t("saving") : t("saveChanges")}
           </Button>
         </div>
       </form>

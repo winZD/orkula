@@ -6,17 +6,38 @@ import { ArrowLeft } from "lucide-react";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import { groveSchema } from "~/lib/validations";
-import type { Route } from "./+types/dashboard.groves.new";
+import type { Route } from "./+types/dashboard.groves.$groveId.edit";
 import { Button } from "~/components/ui/button";
 import { Input } from "~/components/ui/input";
 
 export function meta() {
-  return [{ title: "New Grove" }];
+  return [{ title: "Edit Grove" }];
 }
 
-export async function action({ request }: Route.ActionArgs) {
+export async function loader({ request, params }: Route.LoaderArgs) {
   const user = await getSessionUser(request);
-  if (!user) throw new Response("Unauthorized", { status: 401 });
+  if (!user) throw redirect("/login");
+
+  const grove = await db.grove.findFirst({
+    where: { id: params.groveId, tenantId: user.tenantId },
+  });
+
+  if (!grove) throw redirect("/dashboard/groves");
+
+  return { grove };
+}
+
+export async function action({ request, params }: Route.ActionArgs) {
+  const user = await getSessionUser(request);
+  if (!user) throw redirect("/login");
+
+  const grove = await db.grove.findFirst({
+    where: { id: params.groveId, tenantId: user.tenantId },
+  });
+
+  if (!grove) {
+    return data({ error: "groveNotFound" }, { status: 404 });
+  }
 
   const formData = await request.formData();
   const raw = Object.fromEntries(formData);
@@ -26,20 +47,21 @@ export async function action({ request }: Route.ActionArgs) {
     return data({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
-  await db.grove.create({
+  await db.grove.update({
+    where: { id: grove.id },
     data: {
       name: parsed.data.name,
       location: parsed.data.location || null,
       area: parsed.data.area ?? null,
       treeCount: parsed.data.treeCount ?? null,
-      tenantId: user.tenantId,
     },
   });
 
   return redirect("/dashboard/groves");
 }
 
-export default function NewGrove() {
+export default function EditGrove({ loaderData }: Route.ComponentProps) {
+  const { grove } = loaderData;
   const fetcher = useFetcher<typeof action>();
   const navigate = useNavigate();
   const isSubmitting = fetcher.state === "submitting";
@@ -52,6 +74,12 @@ export default function NewGrove() {
   } = useForm({
     resolver: zodResolver(groveSchema),
     mode: "onBlur",
+    defaultValues: {
+      name: grove.name,
+      location: grove.location ?? "",
+      area: grove.area ?? undefined,
+      treeCount: grove.treeCount ?? undefined,
+    },
   });
 
   return (
@@ -61,8 +89,8 @@ export default function NewGrove() {
           <ArrowLeft className="h-4 w-4" />
           {t("back")}
         </Link>
-        <h2 className="text-2xl font-bold">{t("newGrove")}</h2>
-        <p className="text-muted-foreground">{t("newGroveDescription")}</p>
+        <h2 className="text-2xl font-bold">{t("editGrove")}</h2>
+        <p className="text-muted-foreground">{t("editGroveDescription")}</p>
       </div>
 
       <form
@@ -159,7 +187,7 @@ export default function NewGrove() {
             disabled={isSubmitting}
             className="w-full sm:w-auto bg-forest text-cream hover:opacity-80 hover:bg-forest"
           >
-            {isSubmitting ? t("saving") : t("saveGrove")}
+            {isSubmitting ? t("saving") : t("saveChanges")}
           </Button>
         </div>
       </form>
