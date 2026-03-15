@@ -81,6 +81,7 @@ export default function NewGrove() {
           </label>
           <Input
             id="name"
+            className="cursor-text"
             placeholder={t("namePlaceholder")}
             aria-invalid={!!errors.name}
             {...register("name")}
@@ -98,6 +99,7 @@ export default function NewGrove() {
           </label>
           <Input
             id="location"
+            className="cursor-text"
             placeholder={t("locationPlaceholder")}
             {...register("location")}
           />
@@ -110,6 +112,7 @@ export default function NewGrove() {
             </label>
             <Input
               id="area"
+              className="cursor-text"
               type="number"
               step="0.01"
               placeholder="e.g. 2.5"
@@ -128,6 +131,7 @@ export default function NewGrove() {
             </label>
             <Input
               id="treeCount"
+              className="cursor-text"
               type="number"
               placeholder="e.g. 150"
               aria-invalid={!!errors.treeCount}

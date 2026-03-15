@@ -117,6 +117,7 @@ export default function NewUser() {
             <Input
               id="firstName"
               aria-invalid={!!errors.firstName}
+              className="cursor-text"
               {...register("firstName")}
             />
             {errors.firstName && (
@@ -132,6 +133,7 @@ export default function NewUser() {
             </label>
             <Input
               id="lastName"
+              className="cursor-text"
               aria-invalid={!!errors.lastName}
               {...register("lastName")}
             />
@@ -149,6 +151,7 @@ export default function NewUser() {
           </label>
           <Input
             id="email"
+            className="cursor-text"
             type="email"
             aria-invalid={!!errors.email}
             {...register("email")}
@@ -166,6 +169,7 @@ export default function NewUser() {
           </label>
           <Input
             id="password"
+            className="cursor-text"
             type="password"
             aria-invalid={!!errors.password}
             {...register("password")}

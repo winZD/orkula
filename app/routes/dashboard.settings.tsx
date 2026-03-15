@@ -1,12 +1,23 @@
 import { useState } from "react";
 import { data, redirect, useFetcher, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Pencil } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import { localeCookie } from "~/cookies";
 import type { Route } from "./+types/dashboard.settings";
 import { Button } from "~/components/ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "~/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -66,6 +77,36 @@ export async function action({ request }: Route.ActionArgs) {
   if (!user) throw redirect("/login");
 
   const formData = await request.formData();
+  const intent = formData.get("intent");
+
+  // Delete user
+  if (intent === "deleteUser") {
+    const canManageUsers = user.role === "OWNER" || user.role === "ADMIN";
+    if (!canManageUsers) {
+      return data({ error: "unauthorizedAction" }, { status: 403 });
+    }
+
+    const userId = formData.get("userId");
+    if (typeof userId !== "string") {
+      return data({ error: "userNotFound" }, { status: 400 });
+    }
+
+    if (userId === user.id) {
+      return data({ error: "cannotDeleteSelf" }, { status: 400 });
+    }
+
+    const targetUser = await db.user.findFirst({
+      where: { id: userId, tenantId: user.tenantId },
+    });
+
+    if (!targetUser) {
+      return data({ error: "userNotFound" }, { status: 404 });
+    }
+
+    await db.user.delete({ where: { id: userId } });
+
+    return data({ success: true });
+  }
 
   // Language change
   const lng = formData.get("lng");
@@ -176,11 +217,44 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                       <TableCell>{member.email}</TableCell>
                       <TableCell>{roleTranslations[member.role] ?? member.role}</TableCell>
                       <TableCell>
-                        <Button asChild size="icon" className="h-8 w-8 bg-forest text-cream hover:opacity-80 hover:bg-forest">
-                          <Link to={`/dashboard/users/${member.id}/edit`}>
-                            <Pencil className="h-4 w-4" />
-                          </Link>
-                        </Button>
+                        <div className="flex gap-1">
+                          <Button asChild size="icon" className="h-8 w-8 bg-forest text-cream hover:opacity-80 hover:bg-forest">
+                            <Link to={`/dashboard/users/${member.id}/edit`}>
+                              <Pencil className="h-4 w-4" />
+                            </Link>
+                          </Button>
+                          {member.id !== loaderData.currentUserId && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="icon" className="h-8 w-8">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>{t("deleteUserConfirmTitle")}</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    {t("deleteUserConfirmDescription")}
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    variant="destructive"
+                                    onClick={() => {
+                                      fetcher.submit(
+                                        { intent: "deleteUser", userId: member.id },
+                                        { method: "post" },
+                                      );
+                                    }}
+                                  >
+                                    {t("confirm")}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

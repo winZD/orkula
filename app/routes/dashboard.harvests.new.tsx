@@ -193,6 +193,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
             </label>
             <Input
               id="date"
+              className="cursor-text"
               type="date"
               aria-invalid={!!errors.date}
               {...register("date")}
@@ -209,6 +210,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
             </label>
             <Input
               id="quantityKg"
+              className="cursor-text"
               type="number"
               step="0.1"
               placeholder="e.g. 500"
@@ -230,6 +232,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
             </label>
             <Input
               id="oilYieldLt"
+              className="cursor-text"
               type="number"
               step="0.1"
               placeholder="e.g. 75"
@@ -248,6 +251,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
             </label>
             <Input
               id="oilYieldPct"
+              className="cursor-text"
               type="number"
               step="0.1"
               placeholder="e.g. 15"
@@ -268,6 +272,7 @@ export default function NewHarvest({ loaderData }: Route.ComponentProps) {
           </label>
           <Textarea
             id="notes"
+            className="cursor-text"
             placeholder={t("notesPlaceholder")}
             {...register("notes")}
           />

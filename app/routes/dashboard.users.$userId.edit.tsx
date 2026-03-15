@@ -168,6 +168,7 @@ export default function EditUser({ loaderData }: Route.ComponentProps) {
             </label>
             <Input
               id="firstName"
+              className="cursor-text"
               aria-invalid={!!errors.firstName}
               {...register("firstName")}
             />
@@ -184,6 +185,7 @@ export default function EditUser({ loaderData }: Route.ComponentProps) {
             </label>
             <Input
               id="lastName"
+              className="cursor-text"
               aria-invalid={!!errors.lastName}
               {...register("lastName")}
             />
@@ -201,6 +203,7 @@ export default function EditUser({ loaderData }: Route.ComponentProps) {
           </label>
           <Input
             id="email"
+            className="cursor-text"
             type="email"
             aria-invalid={!!errors.email}
             {...register("email")}
@@ -218,6 +221,7 @@ export default function EditUser({ loaderData }: Route.ComponentProps) {
           </label>
           <Input
             id="password"
+            className="cursor-text"
             type="password"
             placeholder={t("passwordLeavBlank")}
             aria-invalid={!!errors.password}

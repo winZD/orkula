@@ -91,6 +91,7 @@ export default function Login() {
               </label>
               <Input
                 id="email"
+                className="cursor-text"
                 type="email"
                 placeholder="you@example.com"
                 aria-invalid={!!errors.email}
@@ -108,6 +109,7 @@ export default function Login() {
               </label>
               <Input
                 id="password"
+                className="cursor-text"
                 type="password"
                 placeholder="••••••••"
                 aria-invalid={!!errors.password}

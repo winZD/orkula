@@ -117,6 +117,12 @@ export default {
   ownerRoleLocked: "The owner role cannot be changed.",
   userNotFound: "User not found.",
   userUpdated: "User updated successfully.",
+  deleteUser: "Delete user",
+  deleteUserConfirmTitle: "Are you sure?",
+  deleteUserConfirmDescription: "This action cannot be undone. This will permanently delete this user account.",
+  confirm: "Confirm",
+  userDeleted: "User deleted successfully.",
+  cannotDeleteSelf: "You cannot delete your own account.",
 
   // Home
   homeLogin: "Log in",

@@ -85,6 +85,7 @@ export default function Signup() {
               </label>
               <Input
                 id="farmName"
+                className="cursor-text"
                 type="text"
                 placeholder="Horvat Olive Farm"
                 aria-invalid={!!errors.farmName}
@@ -103,6 +104,7 @@ export default function Signup() {
                 </label>
                 <Input
                   id="firstName"
+                  className="cursor-text"
                   type="text"
                   placeholder="Ivan"
                   aria-invalid={!!errors.firstName}
@@ -120,6 +122,7 @@ export default function Signup() {
                 </label>
                 <Input
                   id="lastName"
+                  className="cursor-text"
                   type="text"
                   placeholder="Horvat"
                   aria-invalid={!!errors.lastName}
@@ -138,6 +141,7 @@ export default function Signup() {
               </label>
               <Input
                 id="email"
+                className="cursor-text"
                 type="email"
                 placeholder="you@example.com"
                 aria-invalid={!!errors.email}
@@ -155,6 +159,7 @@ export default function Signup() {
               </label>
               <Input
                 id="password"
+                className="cursor-text"
                 type="password"
                 placeholder="••••••••"
                 aria-invalid={!!errors.password}

@@ -117,6 +117,12 @@ export default {
   ownerRoleLocked: "Uloga vlasnika se ne može promijeniti.",
   userNotFound: "Korisnik nije pronađen.",
   userUpdated: "Korisnik je uspješno ažuriran.",
+  deleteUser: "Obriši korisnika",
+  deleteUserConfirmTitle: "Jeste li sigurni?",
+  deleteUserConfirmDescription: "Ova radnja se ne može poništiti. Korisnički račun će biti trajno obrisan.",
+  confirm: "Potvrdi",
+  userDeleted: "Korisnik je uspješno obrisan.",
+  cannotDeleteSelf: "Ne možete obrisati vlastiti račun.",
 
   // Home
   homeLogin: "Prijava",
