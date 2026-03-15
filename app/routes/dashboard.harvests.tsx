@@ -1,6 +1,7 @@
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useFetcher, data } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Loader2 } from "lucide-react";
 
 const METHOD_T_KEY: Record<string, string> = {
   HAND: "methodHand",
@@ -35,6 +36,8 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 
+const PAGE_SIZE = 20;
+
 export function meta() {
   return [{ title: "Harvests" }];
 }
@@ -43,16 +46,35 @@ export async function loader({ request }: Route.LoaderArgs) {
   const user = await getSessionUser(request);
   if (!user) throw new Response("Unauthorized", { status: 401 });
 
-  const harvests = await db.harvest.findMany({
-    where: { tenantId: user.tenantId },
-    include: {
-      grove: { select: { name: true } },
-      recordedBy: { select: { firstName: true, lastName: true } },
-    },
-    orderBy: { date: "desc" },
-  });
+  const url = new URL(request.url);
+  const skip = parseInt(url.searchParams.get("skip") || "0", 10);
 
-  return { harvests };
+  const [harvests, totalCount, aggregates] = await Promise.all([
+    db.harvest.findMany({
+      where: { tenantId: user.tenantId },
+      include: {
+        grove: { select: { name: true } },
+        recordedBy: { select: { firstName: true, lastName: true } },
+      },
+      orderBy: { date: "desc" },
+      skip,
+      take: PAGE_SIZE,
+    }),
+    db.harvest.count({ where: { tenantId: user.tenantId } }),
+    db.harvest.aggregate({
+      where: { tenantId: user.tenantId },
+      _sum: { quantityKg: true, oilYieldLt: true },
+    }),
+  ]);
+
+  return {
+    harvests,
+    totals: {
+      quantity: aggregates._sum.quantityKg ?? 0,
+      oil: aggregates._sum.oilYieldLt ?? 0,
+    },
+    hasMore: skip + harvests.length < totalCount,
+  };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -82,12 +104,53 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Harvests({ loaderData }: Route.ComponentProps) {
-  const { harvests } = loaderData;
+  const { harvests: initialHarvests, totals, hasMore: initialHasMore } = loaderData;
   const { t } = useTranslation();
-  const fetcher = useFetcher<typeof action>();
+  const deleteFetcher = useFetcher<typeof action>();
+  const loadMoreFetcher = useFetcher<typeof loader>();
 
-  const totalQuantity = harvests.reduce((sum, h) => sum + h.quantityKg, 0);
-  const totalOil = harvests.reduce((sum, h) => sum + (h.oilYieldLt ?? 0), 0);
+  const [allHarvests, setAllHarvests] = useState(initialHarvests);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Reset on revalidation (after delete or navigation)
+  useEffect(() => {
+    setAllHarvests(initialHarvests);
+    setHasMore(initialHasMore);
+  }, [initialHarvests, initialHasMore]);
+
+  // Append fetched pages
+  useEffect(() => {
+    const d = loadMoreFetcher.data;
+    if (d && "harvests" in d) {
+      setAllHarvests((prev) => [...prev, ...d.harvests]);
+      setHasMore(d.hasMore);
+    }
+  }, [loadMoreFetcher.data]);
+
+  const loadMore = useCallback(() => {
+    if (loadMoreFetcher.state === "idle" && hasMore) {
+      loadMoreFetcher.load(`/dashboard/harvests?skip=${allHarvests.length}`);
+    }
+  }, [loadMoreFetcher, hasMore, allHarvests.length]);
+
+  // IntersectionObserver on sentinel
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore();
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMore]);
+
+  const isLoadingMore = loadMoreFetcher.state === "loading";
 
   return (
     <div className="flex flex-1 flex-col gap-4">
@@ -101,13 +164,13 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
         </Button>
       </div>
 
-      {harvests.length === 0 ? (
+      {allHarvests.length === 0 ? (
         <p className="text-center text-muted-foreground py-8">{t("noHarvests")}</p>
       ) : (
         <>
           {/* Mobile cards */}
           <div className="flex flex-col gap-3 md:hidden">
-            {harvests.map((harvest) => (
+            {allHarvests.map((harvest) => (
               <Card key={harvest.id} size="sm" className="bg-cream">
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -141,7 +204,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                             <AlertDialogAction
                               variant="destructive"
                               onClick={() => {
-                                fetcher.submit(
+                                deleteFetcher.submit(
                                   { intent: "deleteHarvest", harvestId: harvest.id },
                                   { method: "post" },
                                 );
@@ -187,9 +250,9 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                   <span>{t("total")}</span>
                   <span />
                   <span className="text-forest/60">{t("quantityKg")}</span>
-                  <span>{totalQuantity.toFixed(1)}</span>
+                  <span>{totals.quantity.toFixed(1)}</span>
                   <span className="text-forest/60">{t("oilYieldLt")}</span>
-                  <span>{totalOil.toFixed(1)}</span>
+                  <span>{totals.oil.toFixed(1)}</span>
                 </div>
               </CardContent>
             </Card>
@@ -212,7 +275,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {harvests.map((harvest) => (
+                {allHarvests.map((harvest) => (
                   <TableRow key={harvest.id}>
                     <TableCell className="font-medium">
                       {new Date(harvest.date).toLocaleDateString("en-GB").replaceAll("/", ".")}
@@ -257,7 +320,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                               <AlertDialogAction
                                 variant="destructive"
                                 onClick={() => {
-                                  fetcher.submit(
+                                  deleteFetcher.submit(
                                     { intent: "deleteHarvest", harvestId: harvest.id },
                                     { method: "post" },
                                   );
@@ -276,14 +339,21 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
               <TableFooter>
                 <TableRow>
                   <TableCell colSpan={2} className="font-medium">{t("total")}</TableCell>
-                  <TableCell>{totalQuantity.toFixed(1)}</TableCell>
-                  <TableCell>{totalOil.toFixed(1)}</TableCell>
+                  <TableCell>{totals.quantity.toFixed(1)}</TableCell>
+                  <TableCell>{totals.oil.toFixed(1)}</TableCell>
                   <TableCell colSpan={5} />
                 </TableRow>
               </TableFooter>
             </Table>
           </div>
         </>
+      )}
+
+      {/* Sentinel for infinite scroll */}
+      {hasMore && (
+        <div ref={sentinelRef} className="flex justify-center py-4">
+          {isLoadingMore && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+        </div>
       )}
     </div>
   );

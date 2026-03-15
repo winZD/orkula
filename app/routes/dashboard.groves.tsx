@@ -1,6 +1,7 @@
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Link, useFetcher, data } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, Loader2 } from "lucide-react";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import type { Route } from "./+types/dashboard.groves";
@@ -27,6 +28,8 @@ import {
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
 
+const PAGE_SIZE = 20;
+
 export function meta() {
   return [{ title: "Groves" }];
 }
@@ -35,16 +38,37 @@ export async function loader({ request }: Route.LoaderArgs) {
   const user = await getSessionUser(request);
   if (!user) throw new Response("Unauthorized", { status: 401 });
 
-  const groves = await db.grove.findMany({
-    where: { tenantId: user.tenantId },
-    include: {
-      varieties: true,
-      _count: { select: { harvests: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const url = new URL(request.url);
+  const skip = parseInt(url.searchParams.get("skip") || "0", 10);
 
-  return { groves };
+  const [groves, totalCount, aggregates, harvestCount] = await Promise.all([
+    db.grove.findMany({
+      where: { tenantId: user.tenantId },
+      include: {
+        varieties: true,
+        _count: { select: { harvests: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take: PAGE_SIZE,
+    }),
+    db.grove.count({ where: { tenantId: user.tenantId } }),
+    db.grove.aggregate({
+      where: { tenantId: user.tenantId },
+      _sum: { area: true, treeCount: true },
+    }),
+    db.harvest.count({ where: { tenantId: user.tenantId } }),
+  ]);
+
+  return {
+    groves,
+    totals: {
+      area: aggregates._sum.area ?? 0,
+      trees: aggregates._sum.treeCount ?? 0,
+      harvests: harvestCount,
+    },
+    hasMore: skip + groves.length < totalCount,
+  };
 }
 
 export async function action({ request }: Route.ActionArgs) {
@@ -74,13 +98,53 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Groves({ loaderData }: Route.ComponentProps) {
-  const { groves } = loaderData;
+  const { groves: initialGroves, totals, hasMore: initialHasMore } = loaderData;
   const { t } = useTranslation();
-  const fetcher = useFetcher<typeof action>();
+  const deleteFetcher = useFetcher<typeof action>();
+  const loadMoreFetcher = useFetcher<typeof loader>();
 
-  const totalArea = groves.reduce((sum, g) => sum + (g.area ?? 0), 0);
-  const totalTrees = groves.reduce((sum, g) => sum + (g.treeCount ?? 0), 0);
-  const totalHarvests = groves.reduce((sum, g) => sum + g._count.harvests, 0);
+  const [allGroves, setAllGroves] = useState(initialGroves);
+  const [hasMore, setHasMore] = useState(initialHasMore);
+  const sentinelRef = useRef<HTMLDivElement>(null);
+
+  // Reset on revalidation (after delete or navigation)
+  useEffect(() => {
+    setAllGroves(initialGroves);
+    setHasMore(initialHasMore);
+  }, [initialGroves, initialHasMore]);
+
+  // Append fetched pages
+  useEffect(() => {
+    const d = loadMoreFetcher.data;
+    if (d && "groves" in d) {
+      setAllGroves((prev) => [...prev, ...d.groves]);
+      setHasMore(d.hasMore);
+    }
+  }, [loadMoreFetcher.data]);
+
+  const loadMore = useCallback(() => {
+    if (loadMoreFetcher.state === "idle" && hasMore) {
+      loadMoreFetcher.load(`/dashboard/groves?skip=${allGroves.length}`);
+    }
+  }, [loadMoreFetcher, hasMore, allGroves.length]);
+
+  // IntersectionObserver on sentinel
+  useEffect(() => {
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) loadMore();
+      },
+      { threshold: 0.1 },
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [loadMore]);
+
+  const isLoadingMore = loadMoreFetcher.state === "loading";
 
   return (
     <div className="flex flex-1 flex-col gap-4">
@@ -89,42 +153,60 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
           <h2 className="text-2xl font-bold">{t("groves")}</h2>
           <p className="text-muted-foreground">{t("grovesDescription")}</p>
         </div>
-        <Button asChild className="bg-forest text-cream hover:opacity-80 hover:bg-forest">
+        <Button
+          asChild
+          className="bg-forest text-cream hover:opacity-80 hover:bg-forest"
+        >
           <Link to="/dashboard/groves/new">{t("newGrove")}</Link>
         </Button>
       </div>
 
-      {groves.length === 0 ? (
-        <p className="text-center text-muted-foreground py-8">{t("noGroves")}</p>
+      {allGroves.length === 0 ? (
+        <p className="text-center text-muted-foreground py-8">
+          {t("noGroves")}
+        </p>
       ) : (
         <>
           {/* Mobile cards */}
           <div className="flex flex-col gap-3 md:hidden">
-            {groves.map((grove) => (
+            {allGroves.map((grove) => (
               <Card key={grove.id} size="sm" className="bg-cream">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div>
                       <CardTitle>{grove.name}</CardTitle>
                       <span className="text-xs text-forest/50">
-                        {new Date(grove.createdAt).toLocaleDateString("en-GB").replaceAll("/", ".")}
+                        {new Date(grove.createdAt)
+                          .toLocaleDateString("en-GB")
+                          .replaceAll("/", ".")}
                       </span>
                     </div>
                     <div className="flex gap-1">
-                      <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        asChild
+                      >
                         <Link to={`/dashboard/groves/${grove.id}/edit`}>
                           <Pencil className="h-4 w-4" />
                         </Link>
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>{t("deleteGroveConfirmTitle")}</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              {t("deleteGroveConfirmTitle")}
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
                               {t("deleteGroveConfirmDescription")}
                             </AlertDialogDescription>
@@ -134,7 +216,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                             <AlertDialogAction
                               variant="destructive"
                               onClick={() => {
-                                fetcher.submit(
+                                deleteFetcher.submit(
                                   { intent: "deleteGrove", groveId: grove.id },
                                   { method: "post" },
                                 );
@@ -180,11 +262,11 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                   <span>{t("total")}</span>
                   <span />
                   <span className="text-forest/60">{t("areaHa")}</span>
-                  <span>{totalArea.toFixed(2)}</span>
+                  <span>{totals.area.toFixed(2)}</span>
                   <span className="text-forest/60">{t("trees")}</span>
-                  <span>{totalTrees}</span>
+                  <span>{totals.trees}</span>
                   <span className="text-forest/60">{t("harvestCount")}</span>
-                  <span>{totalHarvests}</span>
+                  <span>{totals.harvests}</span>
                 </div>
               </CardContent>
             </Card>
@@ -206,7 +288,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {groves.map((grove) => (
+                {allGroves.map((grove) => (
                   <TableRow key={grove.id}>
                     <TableCell className="font-medium">{grove.name}</TableCell>
                     <TableCell>{grove.location ?? "—"}</TableCell>
@@ -225,35 +307,53 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                     </TableCell>
                     <TableCell>{grove._count.harvests}</TableCell>
                     <TableCell>
-                      {new Date(grove.createdAt).toLocaleDateString("en-GB").replaceAll("/", ".")}
+                      {new Date(grove.createdAt)
+                        .toLocaleDateString("en-GB")
+                        .replaceAll("/", ".")}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          asChild
+                        >
                           <Link to={`/dashboard/groves/${grove.id}/edit`}>
                             <Pencil className="h-4 w-4" />
                           </Link>
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>{t("deleteGroveConfirmTitle")}</AlertDialogTitle>
+                              <AlertDialogTitle>
+                                {t("deleteGroveConfirmTitle")}
+                              </AlertDialogTitle>
                               <AlertDialogDescription>
                                 {t("deleteGroveConfirmDescription")}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                              <AlertDialogCancel>
+                                {t("cancel")}
+                              </AlertDialogCancel>
                               <AlertDialogAction
                                 variant="destructive"
                                 onClick={() => {
-                                  fetcher.submit(
-                                    { intent: "deleteGrove", groveId: grove.id },
+                                  deleteFetcher.submit(
+                                    {
+                                      intent: "deleteGrove",
+                                      groveId: grove.id,
+                                    },
                                     { method: "post" },
                                   );
                                 }}
@@ -270,17 +370,28 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
               </TableBody>
               <TableFooter>
                 <TableRow>
-                  <TableCell colSpan={2} className="font-medium">{t("total")}</TableCell>
-                  <TableCell>{totalArea.toFixed(2)}</TableCell>
-                  <TableCell>{totalTrees}</TableCell>
+                  <TableCell colSpan={2} className="font-medium">
+                    {t("total")}
+                  </TableCell>
+                  <TableCell>{totals.area.toFixed(2)}</TableCell>
+                  <TableCell>{totals.trees}</TableCell>
                   <TableCell />
-                  <TableCell>{totalHarvests}</TableCell>
+                  <TableCell>{totals.harvests}</TableCell>
                   <TableCell colSpan={2} />
                 </TableRow>
               </TableFooter>
             </Table>
           </div>
         </>
+      )}
+
+      {/* Sentinel for infinite scroll */}
+      {hasMore && (
+        <div ref={sentinelRef} className="flex justify-center py-4">
+          {isLoadingMore && (
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          )}
+        </div>
       )}
     </div>
   );
