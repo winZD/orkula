@@ -50,8 +50,17 @@ export const addUserSchema = z.object({
   role: z.enum(["ADMIN", "MEMBER"], { message: "validationInvalidRole" }),
 });
 
+export const editUserSchema = z.object({
+  firstName: z.string().min(1, "validationFirstNameRequired"),
+  lastName: z.string().min(1, "validationLastNameRequired"),
+  email: z.email("validationInvalidEmail"),
+  password: z.string().min(6, "validationPasswordMin").optional().or(z.literal("")),
+  role: z.enum(["ADMIN", "MEMBER"], { message: "validationInvalidRole" }),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type GroveInput = z.infer<typeof groveSchema>;
 export type HarvestInput = z.infer<typeof harvestSchema>;
 export type AddUserInput = z.infer<typeof addUserSchema>;
+export type EditUserInput = z.infer<typeof editUserSchema>;

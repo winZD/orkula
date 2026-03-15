@@ -1,5 +1,6 @@
 export default {
   // Common
+  back: "Natrag",
   save: "Spremi",
   saving: "Spremanje...",
   cancel: "Odustani",
@@ -109,6 +110,13 @@ export default {
   unauthorizedAction: "Nemate ovlasti za ovu radnju.",
   validationInvalidRole: "Nevažeća uloga",
   noTeamMembers: "Nema drugih članova tima.",
+  editUser: "Uredi korisnika",
+  editUserDescription: "Uredite podatke korisnika.",
+  saveChanges: "Spremi promjene",
+  passwordLeavBlank: "Ostavite prazno za zadržavanje trenutne lozinke",
+  ownerRoleLocked: "Uloga vlasnika se ne može promijeniti.",
+  userNotFound: "Korisnik nije pronađen.",
+  userUpdated: "Korisnik je uspješno ažuriran.",
 
   // Home
   homeLogin: "Prijava",

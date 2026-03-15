@@ -1,5 +1,6 @@
 export default {
   // Common
+  back: "Back",
   save: "Save",
   saving: "Saving...",
   cancel: "Cancel",
@@ -109,6 +110,13 @@ export default {
   unauthorizedAction: "You are not authorized to perform this action.",
   validationInvalidRole: "Invalid role",
   noTeamMembers: "No other team members.",
+  editUser: "Edit user",
+  editUserDescription: "Edit user details.",
+  saveChanges: "Save changes",
+  passwordLeavBlank: "Leave blank to keep current password",
+  ownerRoleLocked: "The owner role cannot be changed.",
+  userNotFound: "User not found.",
+  userUpdated: "User updated successfully.",
 
   // Home
   homeLogin: "Log in",

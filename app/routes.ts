@@ -11,6 +11,8 @@ export default [
     route("harvests", "routes/dashboard.harvests.tsx"),
     route("harvests/new", "routes/dashboard.harvests.new.tsx"),
     route("settings", "routes/dashboard.settings.tsx"),
+    route("users/new", "routes/dashboard.users.new.tsx"),
+    route("users/:userId/edit", "routes/dashboard.users.$userId.edit.tsx"),
   ]),
 
 ] satisfies RouteConfig;

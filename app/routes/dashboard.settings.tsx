@@ -1,16 +1,12 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { data, redirect, useFetcher } from "react-router";
+import { data, redirect, useFetcher, Link } from "react-router";
 import { useTranslation } from "react-i18next";
+import { Pencil } from "lucide-react";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
-import { hashPassword } from "~/lib/password.server";
 import { localeCookie } from "~/cookies";
-import { addUserSchema, type AddUserInput } from "~/lib/validations";
 import type { Route } from "./+types/dashboard.settings";
 import { Button } from "~/components/ui/button";
-import { Input } from "~/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -70,56 +66,16 @@ export async function action({ request }: Route.ActionArgs) {
   if (!user) throw redirect("/login");
 
   const formData = await request.formData();
-  const intent = formData.get("intent");
 
-  if (intent === "addUser") {
-    if (user.role !== "OWNER" && user.role !== "ADMIN") {
-      return data({ intent: "addUser", error: "unauthorizedAction" }, { status: 403 });
-    }
-
-    const raw = Object.fromEntries(formData);
-    const parsed = addUserSchema.safeParse(raw);
-
-    if (!parsed.success) {
-      return data(
-        { intent: "addUser", error: parsed.error.issues[0].message },
-        { status: 400 },
-      );
-    }
-
-    const existing = await db.user.findUnique({
-      where: { email: parsed.data.email },
-    });
-
-    if (existing) {
-      return data({ intent: "addUser", error: "userEmailExists" }, { status: 400 });
-    }
-
-    const hashedPassword = await hashPassword(parsed.data.password);
-
-    await db.user.create({
-      data: {
-        email: parsed.data.email,
-        password: hashedPassword,
-        firstName: parsed.data.firstName,
-        lastName: parsed.data.lastName,
-        role: parsed.data.role,
-        tenantId: user.tenantId,
-      },
-    });
-
-    return data({ intent: "addUser", success: true });
-  }
-
-  // Default: language change
+  // Language change
   const lng = formData.get("lng");
 
   if (lng !== "hr" && lng !== "en") {
-    return data({ intent: "language", error: "validationInvalidLanguage" }, { status: 400 });
+    return data({ error: "validationInvalidLanguage" }, { status: 400 });
   }
 
   return data(
-    { intent: "language", success: true },
+    { success: true },
     { headers: { "Set-Cookie": await localeCookie.serialize(lng) } },
   );
 }
@@ -127,7 +83,6 @@ export async function action({ request }: Route.ActionArgs) {
 export default function Settings({ loaderData }: Route.ComponentProps) {
   const { t, i18n } = useTranslation();
   const fetcher = useFetcher<typeof action>();
-  const addUserFetcher = useFetcher<typeof action>();
 
   const savedLang = loaderData.currentLanguage || i18n.language;
   const [selectedLang, setSelectedLang] = useState(savedLang);
@@ -140,23 +95,9 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
   };
 
   function handleSave() {
-    fetcher.submit({ lng: selectedLang, intent: "language" }, { method: "post" });
+    fetcher.submit({ lng: selectedLang }, { method: "post" });
     i18n.changeLanguage(selectedLang);
   }
-
-  const addUserSuccess =
-    addUserFetcher.data &&
-    "intent" in addUserFetcher.data &&
-    addUserFetcher.data.intent === "addUser" &&
-    "success" in addUserFetcher.data;
-
-  const addUserError =
-    addUserFetcher.data &&
-    "intent" in addUserFetcher.data &&
-    addUserFetcher.data.intent === "addUser" &&
-    "error" in addUserFetcher.data
-      ? addUserFetcher.data.error
-      : null;
 
   return (
     <div className="flex flex-1 flex-col gap-8">
@@ -201,9 +142,14 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
         <>
           <hr className="border-forest/10" />
 
-          <div>
-            <h3 className="text-xl font-bold">{t("teamMembers")}</h3>
-            <p className="text-muted-foreground">{t("teamMembersDescription")}</p>
+          <div className="flex items-center justify-between max-w-2xl">
+            <div>
+              <h3 className="text-xl font-bold">{t("teamMembers")}</h3>
+              <p className="text-muted-foreground">{t("teamMembersDescription")}</p>
+            </div>
+            <Button asChild className="bg-forest text-cream hover:opacity-80 hover:bg-forest">
+              <Link to="/dashboard/users/new">{t("addUser")}</Link>
+            </Button>
           </div>
 
           {/* Current team members table */}
@@ -215,6 +161,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                     <TableHead>{t("name")}</TableHead>
                     <TableHead>{t("email")}</TableHead>
                     <TableHead>{t("role")}</TableHead>
+                    <TableHead />
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -228,6 +175,13 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                       </TableCell>
                       <TableCell>{member.email}</TableCell>
                       <TableCell>{roleTranslations[member.role] ?? member.role}</TableCell>
+                      <TableCell>
+                        <Button asChild size="icon" className="h-8 w-8 bg-forest text-cream hover:opacity-80 hover:bg-forest">
+                          <Link to={`/dashboard/users/${member.id}/edit`}>
+                            <Pencil className="h-4 w-4" />
+                          </Link>
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -236,164 +190,8 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               <p className="text-sm text-muted-foreground">{t("noTeamMembers")}</p>
             )}
           </div>
-
-          {/* Add user form */}
-          <div>
-            <h4 className="text-lg font-semibold">{t("addUser")}</h4>
-            <p className="text-sm text-muted-foreground">{t("addUserDescription")}</p>
-          </div>
-
-          <AddUserForm
-            fetcher={addUserFetcher}
-            error={addUserError}
-            success={!!addUserSuccess}
-          />
         </>
       )}
     </div>
-  );
-}
-
-function AddUserForm({
-  fetcher,
-  error,
-  success,
-}: {
-  fetcher: ReturnType<typeof useFetcher<typeof action>>;
-  error: string | null;
-  success: boolean;
-}) {
-  const { t } = useTranslation();
-  const isSubmitting = fetcher.state === "submitting";
-
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    reset,
-    formState: { errors },
-  } = useForm<AddUserInput>({
-    resolver: zodResolver(addUserSchema),
-    mode: "onBlur",
-    defaultValues: { role: "MEMBER" },
-  });
-
-  const selectedRole = watch("role");
-
-  function onSubmit(formData: AddUserInput) {
-    fetcher.submit({ ...formData, intent: "addUser" }, { method: "post" });
-    reset();
-  }
-
-  return (
-    <form
-      className="flex flex-col gap-4 max-w-2xl"
-      onSubmit={handleSubmit(onSubmit)}
-    >
-      {error && <p className="text-sm text-destructive">{t(error)}</p>}
-      {success && <p className="text-sm text-green-600">{t("userAdded")}</p>}
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1">
-          <label htmlFor="add-firstName" className="text-sm font-medium">
-            {t("firstName")} *
-          </label>
-          <Input
-            id="add-firstName"
-            aria-invalid={!!errors.firstName}
-            {...register("firstName")}
-          />
-          {errors.firstName && (
-            <p className="text-xs text-destructive">
-              {t(errors.firstName.message as string)}
-            </p>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-1">
-          <label htmlFor="add-lastName" className="text-sm font-medium">
-            {t("lastName")} *
-          </label>
-          <Input
-            id="add-lastName"
-            aria-invalid={!!errors.lastName}
-            {...register("lastName")}
-          />
-          {errors.lastName && (
-            <p className="text-xs text-destructive">
-              {t(errors.lastName.message as string)}
-            </p>
-          )}
-        </div>
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label htmlFor="add-email" className="text-sm font-medium">
-          {t("email")} *
-        </label>
-        <Input
-          id="add-email"
-          type="email"
-          aria-invalid={!!errors.email}
-          {...register("email")}
-        />
-        {errors.email && (
-          <p className="text-xs text-destructive">
-            {t(errors.email.message as string)}
-          </p>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label htmlFor="add-password" className="text-sm font-medium">
-          {t("password")} *
-        </label>
-        <Input
-          id="add-password"
-          type="password"
-          aria-invalid={!!errors.password}
-          {...register("password")}
-        />
-        {errors.password && (
-          <p className="text-xs text-destructive">
-            {t(errors.password.message as string)}
-          </p>
-        )}
-      </div>
-
-      <div className="flex flex-col gap-1">
-        <label htmlFor="add-role" className="text-sm font-medium">
-          {t("role")} *
-        </label>
-        <Select
-          value={selectedRole}
-          onValueChange={(val) => setValue("role", val as "ADMIN" | "MEMBER")}
-        >
-          <SelectTrigger id="add-role" className="w-full bg-white">
-            <SelectValue placeholder={t("selectRole")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ADMIN">{t("roleAdmin")}</SelectItem>
-            <SelectItem value="MEMBER">{t("roleMember")}</SelectItem>
-          </SelectContent>
-        </Select>
-        {errors.role && (
-          <p className="text-xs text-destructive">
-            {t(errors.role.message as string)}
-          </p>
-        )}
-      </div>
-
-      <div>
-        <Button
-          type="submit"
-          disabled={isSubmitting}
-          className="bg-forest text-cream hover:opacity-80 hover:bg-forest"
-        >
-          {isSubmitting ? t("saving") : t("addUser")}
-        </Button>
-      </div>
-    </form>
   );
 }
