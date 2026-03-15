@@ -193,31 +193,97 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             </Button>
           </div>
 
-          {/* Current team members table */}
+          {/* Current team members */}
           <div className="max-w-2xl">
             {loaderData.teamMembers.length > 0 ? (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("name")}</TableHead>
-                    <TableHead>{t("email")}</TableHead>
-                    <TableHead>{t("role")}</TableHead>
-                    <TableHead />
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                {/* Desktop table */}
+                <div className="hidden sm:block">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("name")}</TableHead>
+                        <TableHead>{t("email")}</TableHead>
+                        <TableHead>{t("role")}</TableHead>
+                        <TableHead />
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {loaderData.teamMembers.map((member) => (
+                        <TableRow key={member.id}>
+                          <TableCell>
+                            {member.firstName} {member.lastName}
+                            {member.id === loaderData.currentUserId && (
+                              <span className="ml-1 text-xs text-muted-foreground">(you)</span>
+                            )}
+                          </TableCell>
+                          <TableCell>{member.email}</TableCell>
+                          <TableCell>{roleTranslations[member.role] ?? member.role}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button asChild size="icon" className="h-8 w-8 bg-forest text-cream hover:opacity-80 hover:bg-forest">
+                                <Link to={`/dashboard/users/${member.id}/edit`}>
+                                  <Pencil className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              {member.id !== loaderData.currentUserId && (
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="icon" className="h-8 w-8">
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>{t("deleteUserConfirmTitle")}</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        {t("deleteUserConfirmDescription")}
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                                      <AlertDialogAction
+                                        variant="destructive"
+                                        onClick={() => {
+                                          fetcher.submit(
+                                            { intent: "deleteUser", userId: member.id },
+                                            { method: "post" },
+                                          );
+                                        }}
+                                      >
+                                        {t("confirm")}
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Mobile cards */}
+                <div className="flex flex-col gap-3 sm:hidden">
                   {loaderData.teamMembers.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell>
-                        {member.firstName} {member.lastName}
-                        {member.id === loaderData.currentUserId && (
-                          <span className="ml-1 text-xs text-muted-foreground">(you)</span>
-                        )}
-                      </TableCell>
-                      <TableCell>{member.email}</TableCell>
-                      <TableCell>{roleTranslations[member.role] ?? member.role}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
+                    <div
+                      key={member.id}
+                      className="rounded-lg border border-forest/10 bg-white p-4"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex flex-col gap-1 min-w-0">
+                          <p className="font-medium truncate">
+                            {member.firstName} {member.lastName}
+                            {member.id === loaderData.currentUserId && (
+                              <span className="ml-1 text-xs text-muted-foreground">(you)</span>
+                            )}
+                          </p>
+                          <p className="text-sm text-muted-foreground truncate">{member.email}</p>
+                          <p className="text-sm">{roleTranslations[member.role] ?? member.role}</p>
+                        </div>
+                        <div className="flex gap-1 shrink-0">
                           <Button asChild size="icon" className="h-8 w-8 bg-forest text-cream hover:opacity-80 hover:bg-forest">
                             <Link to={`/dashboard/users/${member.id}/edit`}>
                               <Pencil className="h-4 w-4" />
@@ -255,11 +321,11 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                             </AlertDialog>
                           )}
                         </div>
-                      </TableCell>
-                    </TableRow>
+                      </div>
+                    </div>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+              </>
             ) : (
               <p className="text-sm text-muted-foreground">{t("noTeamMembers")}</p>
             )}
