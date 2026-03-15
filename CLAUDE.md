@@ -38,7 +38,7 @@ Path alias: `~/*` maps to `./app/*`.
 
 PostgreSQL via Prisma ORM (`@prisma/adapter-pg`). Generated client is imported from `generated/prisma/client` (not `@prisma/client`). Requires `DATABASE_URL` in `.env`.
 
-Core models: Tenant → Users, Groves, Harvests. Users have roles (OWNER, ADMIN, MEMBER). Groves track olive varieties via GroveVariety join model.
+Core models: Tenant → Users, Groves, Harvests. Users have roles (OWNER, ADMIN, MEMBER). Groves track olive varieties via GroveVariety join model. Harvests track method via `HarvestMethod` enum (HAND, RAKE, MECHANICAL_SHAKER, VIBRATOR, NET).
 
 ### Multi-Tenancy
 
@@ -50,7 +50,7 @@ Session-based auth in `app/lib/auth.server.ts`. Tokens stored in DB with 30-day 
 
 ### Form Validation
 
-Forms use `react-hook-form` with `@hookform/resolvers/zod`. Zod schemas are defined in `app/lib/validations.ts` and reused for both client-side validation and server-side action parsing.
+Forms use `react-hook-form` with `@hookform/resolvers/zod`. Zod schemas are defined in `app/lib/validations.ts` and reused for both client-side validation and server-side action parsing. When using `useForm` with Zod schemas that contain `.transform()` (like `numericField`), do **not** pass the output type as a generic parameter — omit the type parameter and let inference handle it.
 
 ### Internationalization (i18n)
 
@@ -70,3 +70,14 @@ Tailwind CSS v4 with custom theme colors (forest green `#1b4019`, cream `#ede8d0
 ### Deployment
 
 Dockerfile included (Node 20 Alpine). PWA configured via `vite-plugin-pwa`.
+
+### Route Patterns
+
+CRUD routes follow a consistent naming convention:
+- List: `dashboard.<resource>.tsx` (includes delete action via `intent` field in form data)
+- Create: `dashboard.<resource>.new.tsx`
+- Edit: `dashboard.<resource>.$<id>.edit.tsx`
+
+Delete operations use an `AlertDialog` confirmation and are handled as actions on the list page (not separate routes), using `fetcher.submit({ intent: "delete<Resource>", <resource>Id: id }, { method: "post" })`.
+
+All form pages include a back link to the parent list page, cancel/submit buttons, and `useFetcher` for form submission.
