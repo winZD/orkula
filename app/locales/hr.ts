@@ -52,7 +52,7 @@ export default {
   saveGrove: "Spremi maslinik",
   name: "Naziv",
   location: "Lokacija",
-  areaHa: "Površina (m²)",
+  area: "Površina (m²)",
   trees: "Stabla",
   varieties: "Sorte",
   harvestCount: "Berbe",

@@ -52,7 +52,7 @@ export default {
   saveGrove: "Save grove",
   name: "Name",
   location: "Location",
-  areaHa: "Area (m²)",
+  area: "Area (m²)",
   trees: "Trees",
   varieties: "Varieties",
   harvestCount: "Harvests",

@@ -108,7 +108,7 @@ export default function NewGrove() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1">
             <label htmlFor="area" className="text-sm font-medium">
-              {t("areaHa")}
+              {t("area")}
             </label>
             <Input
               id="area"

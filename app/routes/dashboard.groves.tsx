@@ -234,7 +234,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                   <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
                     <span className="text-forest/60">{t("location")}</span>
                     <span>{grove.location ?? "—"}</span>
-                    <span className="text-forest/60">{t("areaHa")}</span>
+                    <span className="text-forest/60">{t("area")}</span>
                     <span>{grove.area ?? "—"}</span>
                     <span className="text-forest/60">{t("trees")}</span>
                     <span>{grove.treeCount ?? "—"}</span>
@@ -261,7 +261,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                 <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm font-medium">
                   <span>{t("total")}</span>
                   <span />
-                  <span className="text-forest/60">{t("areaHa")}</span>
+                  <span className="text-forest/60">{t("area")}</span>
                   <span>{totals.area.toFixed(2)}</span>
                   <span className="text-forest/60">{t("trees")}</span>
                   <span>{totals.trees}</span>
@@ -279,7 +279,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                 <TableRow>
                   <TableHead>{t("name")}</TableHead>
                   <TableHead>{t("location")}</TableHead>
-                  <TableHead>{t("areaHa")}</TableHead>
+                  <TableHead>{t("area")}</TableHead>
                   <TableHead>{t("trees")}</TableHead>
                   <TableHead>{t("varieties")}</TableHead>
                   <TableHead>{t("harvestCount")}</TableHead>
