@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Orkula is an olive grove management application built with React Router v7 (full-stack SSR) and PostgreSQL. It supports multi-tenant isolation (each farm/organization is a tenant). The UI is in Croatian.
+Orkula is an olive grove management application built with React Router v7 (full-stack SSR) and PostgreSQL. It supports multi-tenant isolation (each farm/organization is a tenant). The UI supports Croatian (`hr`) and English (`en`) via i18next, with Croatian as the default.
 
 ## Commands
 
@@ -51,6 +51,17 @@ Session-based auth in `app/lib/auth.server.ts`. Tokens stored in DB with 30-day 
 ### Form Validation
 
 Forms use `react-hook-form` with `@hookform/resolvers/zod`. Zod schemas are defined in `app/lib/validations.ts` and reused for both client-side validation and server-side action parsing.
+
+### Internationalization (i18n)
+
+Uses `remix-i18next` middleware + `react-i18next`. The language detection flow spans multiple files:
+
+1. **Server middleware** (`app/middleware/i18next.ts`): `remix-i18next/middleware` runs on every request (attached in `app/root.tsx`). Checks the `lng` cookie first, then falls back to the browser `Accept-Language` header, then to `"hr"`.
+2. **Root loader** (`app/root.tsx`): calls `getLocale(context)` to get the detected language, passes it to the client.
+3. **Client hydration** (`app/entry.client.tsx`): initializes i18next with `I18nextBrowserLanguageDetector`, detection order `["htmlTag"]` — reads `<html lang="...">` set by the server.
+4. **Server rendering** (`app/entry.server.tsx`): gets the i18next instance from middleware context (or creates a fallback) and wraps `ServerRouter` with `I18nextProvider`.
+
+Translation files are in `app/locales/hr.ts` and `app/locales/en.ts`. The locale cookie (`lng`) is defined in `app/cookies.ts`. Zod validation messages use i18n translation keys (e.g., `"validationInvalidEmail"`), not literal strings.
 
 ### Styling
 
