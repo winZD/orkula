@@ -35,6 +35,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
+import { Checkbox } from "~/components/ui/checkbox";
+import { useRowSelection } from "~/hooks/use-row-selection";
+import { BulkActionBar } from "~/components/bulk-action-bar";
 
 const PAGE_SIZE = 20;
 
@@ -100,6 +103,27 @@ export async function action({ request }: Route.ActionArgs) {
     return data({ success: true });
   }
 
+  if (intent === "deleteManyHarvests") {
+    const ids = formData.getAll("ids") as string[];
+    if (ids.length === 0) {
+      return data({ error: "invalidIntent" }, { status: 400 });
+    }
+
+    const count = await db.harvest.count({
+      where: { id: { in: ids }, tenantId: user.tenantId },
+    });
+
+    if (count !== ids.length) {
+      return data({ error: "harvestNotFound" }, { status: 404 });
+    }
+
+    await db.harvest.deleteMany({
+      where: { id: { in: ids }, tenantId: user.tenantId },
+    });
+
+    return data({ success: true });
+  }
+
   return data({ error: "invalidIntent" }, { status: 400 });
 }
 
@@ -113,11 +137,24 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
   const [hasMore, setHasMore] = useState(initialHasMore);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const {
+    selectedIds,
+    toggleItem,
+    toggleAll,
+    clearSelection,
+    allSelected,
+    isIndeterminate,
+    selectedCount,
+  } = useRowSelection(allHarvests.map((h) => h.id));
+
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
   // Reset on revalidation (after delete or navigation)
   useEffect(() => {
     setAllHarvests(initialHarvests);
     setHasMore(initialHasMore);
-  }, [initialHarvests, initialHasMore]);
+    clearSelection();
+  }, [initialHarvests, initialHasMore, clearSelection]);
 
   // Append fetched pages
   useEffect(() => {
@@ -152,6 +189,16 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
 
   const isLoadingMore = loadMoreFetcher.state === "loading";
 
+  function handleBulkDelete() {
+    const formData = new FormData();
+    formData.append("intent", "deleteManyHarvests");
+    for (const id of selectedIds) {
+      formData.append("ids", id);
+    }
+    deleteFetcher.submit(formData, { method: "post" });
+    setBulkDeleteOpen(false);
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -174,11 +221,18 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
               <Card key={harvest.id} size="sm" className="bg-cream">
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle>{harvest.grove.name}</CardTitle>
-                      <span className="text-xs text-forest/50">
-                        {new Date(harvest.date).toLocaleDateString("en-GB").replaceAll("/", ".")}
-                      </span>
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        checked={selectedIds.has(harvest.id)}
+                        onCheckedChange={() => toggleItem(harvest.id)}
+                        className="mt-1 border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream"
+                      />
+                      <div>
+                        <CardTitle>{harvest.grove.name}</CardTitle>
+                        <span className="text-xs text-forest/50">
+                          {new Date(harvest.date).toLocaleDateString("en-GB").replaceAll("/", ".")}
+                        </span>
+                      </div>
                     </div>
                     <div className="flex gap-1">
                       <Button variant="outline" size="icon" className="h-8 w-8" asChild>
@@ -263,6 +317,19 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={
+                        allSelected
+                          ? true
+                          : isIndeterminate
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={toggleAll}
+                      className="border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream"
+                    />
+                  </TableHead>
                   <TableHead>{t("date")}</TableHead>
                   <TableHead>{t("grove")}</TableHead>
                   <TableHead>{t("quantityKg")}</TableHead>
@@ -277,6 +344,13 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
               <TableBody>
                 {allHarvests.map((harvest) => (
                   <TableRow key={harvest.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(harvest.id)}
+                        onCheckedChange={() => toggleItem(harvest.id)}
+                        className="border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream"
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">
                       {new Date(harvest.date).toLocaleDateString("en-GB").replaceAll("/", ".")}
                     </TableCell>
@@ -338,6 +412,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
               </TableBody>
               <TableFooter>
                 <TableRow>
+                  <TableCell />
                   <TableCell colSpan={2} className="font-medium">{t("total")}</TableCell>
                   <TableCell>{totals.quantity.toFixed(1)}</TableCell>
                   <TableCell>{totals.oil.toFixed(1)}</TableCell>
@@ -355,6 +430,34 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
           {isLoadingMore && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
         </div>
       )}
+
+      {/* Bulk action bar + confirmation dialog */}
+      <BulkActionBar
+        selectedCount={selectedCount}
+        onClear={clearSelection}
+        onDelete={() => setBulkDeleteOpen(true)}
+      />
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("bulkDeleteConfirmTitle", { count: selectedCount })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("bulkDeleteHarvestsConfirmDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleBulkDelete}
+            >
+              {t("confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -27,6 +27,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "~/components/ui/alert-dialog";
+import { Checkbox } from "~/components/ui/checkbox";
+import { useRowSelection } from "~/hooks/use-row-selection";
+import { BulkActionBar } from "~/components/bulk-action-bar";
 
 const PAGE_SIZE = 20;
 
@@ -94,6 +97,27 @@ export async function action({ request }: Route.ActionArgs) {
     return data({ success: true });
   }
 
+  if (intent === "deleteManyGroves") {
+    const ids = formData.getAll("ids") as string[];
+    if (ids.length === 0) {
+      return data({ error: "invalidIntent" }, { status: 400 });
+    }
+
+    const count = await db.grove.count({
+      where: { id: { in: ids }, tenantId: user.tenantId },
+    });
+
+    if (count !== ids.length) {
+      return data({ error: "groveNotFound" }, { status: 404 });
+    }
+
+    await db.grove.deleteMany({
+      where: { id: { in: ids }, tenantId: user.tenantId },
+    });
+
+    return data({ success: true });
+  }
+
   return data({ error: "invalidIntent" }, { status: 400 });
 }
 
@@ -107,11 +131,24 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
   const [hasMore, setHasMore] = useState(initialHasMore);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
+  const {
+    selectedIds,
+    toggleItem,
+    toggleAll,
+    clearSelection,
+    allSelected,
+    isIndeterminate,
+    selectedCount,
+  } = useRowSelection(allGroves.map((g) => g.id));
+
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
   // Reset on revalidation (after delete or navigation)
   useEffect(() => {
     setAllGroves(initialGroves);
     setHasMore(initialHasMore);
-  }, [initialGroves, initialHasMore]);
+    clearSelection();
+  }, [initialGroves, initialHasMore, clearSelection]);
 
   // Append fetched pages
   useEffect(() => {
@@ -146,6 +183,16 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
 
   const isLoadingMore = loadMoreFetcher.state === "loading";
 
+  function handleBulkDelete() {
+    const formData = new FormData();
+    formData.append("intent", "deleteManyGroves");
+    for (const id of selectedIds) {
+      formData.append("ids", id);
+    }
+    deleteFetcher.submit(formData, { method: "post" });
+    setBulkDeleteOpen(false);
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4">
       <div className="flex items-center justify-between">
@@ -173,13 +220,20 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
               <Card key={grove.id} size="sm" className="bg-cream">
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle>{grove.name}</CardTitle>
-                      <span className="text-xs text-forest/50">
-                        {new Date(grove.createdAt)
-                          .toLocaleDateString("en-GB")
-                          .replaceAll("/", ".")}
-                      </span>
+                    <div className="flex items-start gap-3">
+                      <Checkbox
+                        checked={selectedIds.has(grove.id)}
+                        onCheckedChange={() => toggleItem(grove.id)}
+                        className="mt-1 border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream"
+                      />
+                      <div>
+                        <CardTitle>{grove.name}</CardTitle>
+                        <span className="text-xs text-forest/50">
+                          {new Date(grove.createdAt)
+                            .toLocaleDateString("en-GB")
+                            .replaceAll("/", ".")}
+                        </span>
+                      </div>
                     </div>
                     <div className="flex gap-1">
                       <Button
@@ -277,6 +331,19 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={
+                        allSelected
+                          ? true
+                          : isIndeterminate
+                            ? "indeterminate"
+                            : false
+                      }
+                      onCheckedChange={toggleAll}
+                      className="border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream"
+                    />
+                  </TableHead>
                   <TableHead>{t("name")}</TableHead>
                   <TableHead>{t("location")}</TableHead>
                   <TableHead>{t("area")}</TableHead>
@@ -290,6 +357,13 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
               <TableBody>
                 {allGroves.map((grove) => (
                   <TableRow key={grove.id}>
+                    <TableCell>
+                      <Checkbox
+                        checked={selectedIds.has(grove.id)}
+                        onCheckedChange={() => toggleItem(grove.id)}
+                        className="border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream"
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">{grove.name}</TableCell>
                     <TableCell>{grove.location ?? "—"}</TableCell>
                     <TableCell>{grove.area ?? "—"}</TableCell>
@@ -370,6 +444,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
               </TableBody>
               <TableFooter>
                 <TableRow>
+                  <TableCell />
                   <TableCell colSpan={2} className="font-medium">
                     {t("total")}
                   </TableCell>
@@ -393,6 +468,34 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
           )}
         </div>
       )}
+
+      {/* Bulk action bar + confirmation dialog */}
+      <BulkActionBar
+        selectedCount={selectedCount}
+        onClear={clearSelection}
+        onDelete={() => setBulkDeleteOpen(true)}
+      />
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {t("bulkDeleteConfirmTitle", { count: selectedCount })}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("bulkDeleteGrovesConfirmDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              onClick={handleBulkDelete}
+            >
+              {t("confirm")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -33,6 +33,9 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
+import { Checkbox } from "~/components/ui/checkbox";
+import { useRowSelection } from "~/hooks/use-row-selection";
+import { BulkActionBar } from "~/components/bulk-action-bar";
 
 const SUPPORTED_LANGUAGES = [
   { code: "hr", label: "Hrvatski" },
@@ -108,6 +111,37 @@ export async function action({ request }: Route.ActionArgs) {
     return data({ success: true });
   }
 
+  // Delete many users
+  if (intent === "deleteManyUsers") {
+    const canManageUsers = user.role === "OWNER" || user.role === "ADMIN";
+    if (!canManageUsers) {
+      return data({ error: "unauthorizedAction" }, { status: 403 });
+    }
+
+    const ids = formData.getAll("ids") as string[];
+    if (ids.length === 0) {
+      return data({ error: "invalidIntent" }, { status: 400 });
+    }
+
+    if (ids.includes(user.id)) {
+      return data({ error: "cannotDeleteSelf" }, { status: 400 });
+    }
+
+    const count = await db.user.count({
+      where: { id: { in: ids }, tenantId: user.tenantId },
+    });
+
+    if (count !== ids.length) {
+      return data({ error: "userNotFound" }, { status: 404 });
+    }
+
+    await db.user.deleteMany({
+      where: { id: { in: ids }, tenantId: user.tenantId },
+    });
+
+    return data({ success: true });
+  }
+
   // Language change
   const lng = formData.get("lng");
 
@@ -129,6 +163,22 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
   const [selectedLang, setSelectedLang] = useState(savedLang);
   const hasChanged = selectedLang !== savedLang;
 
+  const excludedIds = new Set([loaderData.currentUserId]);
+  const {
+    selectedIds,
+    toggleItem,
+    toggleAll,
+    clearSelection,
+    allSelected,
+    isIndeterminate,
+    selectedCount,
+  } = useRowSelection(
+    loaderData.teamMembers.map((m) => m.id),
+    excludedIds,
+  );
+
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+
   const roleTranslations: Record<string, string> = {
     OWNER: t("roleOwner"),
     ADMIN: t("roleAdmin"),
@@ -138,6 +188,17 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
   function handleSave() {
     fetcher.submit({ lng: selectedLang }, { method: "post" });
     i18n.changeLanguage(selectedLang);
+  }
+
+  function handleBulkDelete() {
+    const formData = new FormData();
+    formData.append("intent", "deleteManyUsers");
+    for (const id of selectedIds) {
+      formData.append("ids", id);
+    }
+    fetcher.submit(formData, { method: "post" });
+    setBulkDeleteOpen(false);
+    clearSelection();
   }
 
   return (
@@ -202,6 +263,19 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead className="w-10">
+                          <Checkbox
+                            checked={
+                              allSelected
+                                ? true
+                                : isIndeterminate
+                                  ? "indeterminate"
+                                  : false
+                            }
+                            onCheckedChange={toggleAll}
+                            className="border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream"
+                          />
+                        </TableHead>
                         <TableHead>{t("name")}</TableHead>
                         <TableHead>{t("email")}</TableHead>
                         <TableHead>{t("role")}</TableHead>
@@ -209,127 +283,183 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {loaderData.teamMembers.map((member) => (
-                        <TableRow key={member.id}>
-                          <TableCell>
-                            {member.firstName} {member.lastName}
-                            {member.id === loaderData.currentUserId && (
-                              <span className="ml-1 text-xs text-muted-foreground">(you)</span>
-                            )}
-                          </TableCell>
-                          <TableCell>{member.email}</TableCell>
-                          <TableCell>{roleTranslations[member.role] ?? member.role}</TableCell>
-                          <TableCell>
-                            <div className="flex gap-1">
-                              <Button asChild size="icon" className="h-8 w-8 bg-forest text-cream hover:opacity-80 hover:bg-forest">
-                                <Link to={`/dashboard/users/${member.id}/edit`}>
-                                  <Pencil className="h-4 w-4" />
-                                </Link>
-                              </Button>
-                              {member.id !== loaderData.currentUserId && (
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" size="icon" className="h-8 w-8">
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>{t("deleteUserConfirmTitle")}</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        {t("deleteUserConfirmDescription")}
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                                      <AlertDialogAction
-                                        variant="destructive"
-                                        onClick={() => {
-                                          fetcher.submit(
-                                            { intent: "deleteUser", userId: member.id },
-                                            { method: "post" },
-                                          );
-                                        }}
-                                      >
-                                        {t("confirm")}
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
+                      {loaderData.teamMembers.map((member) => {
+                        const isSelf = member.id === loaderData.currentUserId;
+                        return (
+                          <TableRow key={member.id}>
+                            <TableCell>
+                              {isSelf ? (
+                                <Checkbox disabled checked={false} className="border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream" />
+                              ) : (
+                                <Checkbox
+                                  checked={selectedIds.has(member.id)}
+                                  onCheckedChange={() => toggleItem(member.id)}
+                                  className="border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream"
+                                />
                               )}
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                            </TableCell>
+                            <TableCell>
+                              {member.firstName} {member.lastName}
+                              {isSelf && (
+                                <span className="ml-1 text-xs text-muted-foreground">(you)</span>
+                              )}
+                            </TableCell>
+                            <TableCell>{member.email}</TableCell>
+                            <TableCell>{roleTranslations[member.role] ?? member.role}</TableCell>
+                            <TableCell>
+                              <div className="flex gap-1">
+                                <Button asChild size="icon" className="h-8 w-8 bg-forest text-cream hover:opacity-80 hover:bg-forest">
+                                  <Link to={`/dashboard/users/${member.id}/edit`}>
+                                    <Pencil className="h-4 w-4" />
+                                  </Link>
+                                </Button>
+                                {!isSelf && (
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button variant="destructive" size="icon" className="h-8 w-8">
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>{t("deleteUserConfirmTitle")}</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          {t("deleteUserConfirmDescription")}
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          variant="destructive"
+                                          onClick={() => {
+                                            fetcher.submit(
+                                              { intent: "deleteUser", userId: member.id },
+                                              { method: "post" },
+                                            );
+                                          }}
+                                        >
+                                          {t("confirm")}
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
                     </TableBody>
                   </Table>
                 </div>
 
                 {/* Mobile cards */}
                 <div className="flex flex-col gap-3 sm:hidden">
-                  {loaderData.teamMembers.map((member) => (
-                    <div
-                      key={member.id}
-                      className="rounded-lg border border-forest/10 bg-white p-4"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex flex-col gap-1 min-w-0">
-                          <p className="font-medium truncate">
-                            {member.firstName} {member.lastName}
-                            {member.id === loaderData.currentUserId && (
-                              <span className="ml-1 text-xs text-muted-foreground">(you)</span>
+                  {loaderData.teamMembers.map((member) => {
+                    const isSelf = member.id === loaderData.currentUserId;
+                    return (
+                      <div
+                        key={member.id}
+                        className="rounded-lg border border-forest/10 bg-white p-4"
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex items-start gap-3">
+                            {isSelf ? (
+                              <Checkbox disabled checked={false} className="mt-1 border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream" />
+                            ) : (
+                              <Checkbox
+                                checked={selectedIds.has(member.id)}
+                                onCheckedChange={() => toggleItem(member.id)}
+                                className="mt-1 border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream"
+                              />
                             )}
-                          </p>
-                          <p className="text-sm text-muted-foreground truncate">{member.email}</p>
-                          <p className="text-sm">{roleTranslations[member.role] ?? member.role}</p>
-                        </div>
-                        <div className="flex gap-1 shrink-0">
-                          <Button asChild size="icon" className="h-8 w-8 bg-forest text-cream hover:opacity-80 hover:bg-forest">
-                            <Link to={`/dashboard/users/${member.id}/edit`}>
-                              <Pencil className="h-4 w-4" />
-                            </Link>
-                          </Button>
-                          {member.id !== loaderData.currentUserId && (
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="destructive" size="icon" className="h-8 w-8">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>{t("deleteUserConfirmTitle")}</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    {t("deleteUserConfirmDescription")}
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    variant="destructive"
-                                    onClick={() => {
-                                      fetcher.submit(
-                                        { intent: "deleteUser", userId: member.id },
-                                        { method: "post" },
-                                      );
-                                    }}
-                                  >
-                                    {t("confirm")}
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                          )}
+                            <div className="flex flex-col gap-1 min-w-0">
+                              <p className="font-medium truncate">
+                                {member.firstName} {member.lastName}
+                                {isSelf && (
+                                  <span className="ml-1 text-xs text-muted-foreground">(you)</span>
+                                )}
+                              </p>
+                              <p className="text-sm text-muted-foreground truncate">{member.email}</p>
+                              <p className="text-sm">{roleTranslations[member.role] ?? member.role}</p>
+                            </div>
+                          </div>
+                          <div className="flex gap-1 shrink-0">
+                            <Button asChild size="icon" className="h-8 w-8 bg-forest text-cream hover:opacity-80 hover:bg-forest">
+                              <Link to={`/dashboard/users/${member.id}/edit`}>
+                                <Pencil className="h-4 w-4" />
+                              </Link>
+                            </Button>
+                            {!isSelf && (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="destructive" size="icon" className="h-8 w-8">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>{t("deleteUserConfirmTitle")}</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      {t("deleteUserConfirmDescription")}
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      variant="destructive"
+                                      onClick={() => {
+                                        fetcher.submit(
+                                          { intent: "deleteUser", userId: member.id },
+                                          { method: "post" },
+                                        );
+                                      }}
+                                    >
+                                      {t("confirm")}
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             ) : (
               <p className="text-sm text-muted-foreground">{t("noTeamMembers")}</p>
             )}
           </div>
+
+          {/* Bulk action bar + confirmation dialog */}
+          <BulkActionBar
+            selectedCount={selectedCount}
+            onClear={clearSelection}
+            onDelete={() => setBulkDeleteOpen(true)}
+          />
+          <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  {t("bulkDeleteConfirmTitle", { count: selectedCount })}
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  {t("bulkDeleteUsersConfirmDescription")}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                <AlertDialogAction
+                  variant="destructive"
+                  onClick={handleBulkDelete}
+                >
+                  {t("confirm")}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </>
       )}
     </div>

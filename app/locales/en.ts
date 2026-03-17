@@ -145,6 +145,17 @@ export default {
   userDeleted: "User deleted successfully.",
   cannotDeleteSelf: "You cannot delete your own account.",
 
+  // Bulk actions
+  selected: "{{count}} selected",
+  bulkDelete: "Delete",
+  bulkDeleteConfirmTitle: "Delete {{count}} items?",
+  bulkDeleteGrovesConfirmDescription:
+    "This action cannot be undone. The selected groves and all their associated data will be permanently deleted.",
+  bulkDeleteHarvestsConfirmDescription:
+    "This action cannot be undone. The selected harvest records will be permanently deleted.",
+  bulkDeleteUsersConfirmDescription:
+    "This action cannot be undone. The selected user accounts will be permanently deleted.",
+
   // Home
   homeLogin: "Log in",
   homeSignup: "Sign up",

@@ -145,6 +145,17 @@ export default {
   userDeleted: "Korisnik je uspješno obrisan.",
   cannotDeleteSelf: "Ne možete obrisati vlastiti račun.",
 
+  // Bulk actions
+  selected: "{{count}} odabrano",
+  bulkDelete: "Obriši",
+  bulkDeleteConfirmTitle: "Obrisati {{count}} stavki?",
+  bulkDeleteGrovesConfirmDescription:
+    "Ova radnja se ne može poništiti. Odabrani maslinici i svi njihovi povezani podaci bit će trajno obrisani.",
+  bulkDeleteHarvestsConfirmDescription:
+    "Ova radnja se ne može poništiti. Odabrani zapisi o berbama bit će trajno obrisani.",
+  bulkDeleteUsersConfirmDescription:
+    "Ova radnja se ne može poništiti. Odabrani korisnički računi bit će trajno obrisani.",
+
   // Home
   homeLogin: "Prijava",
   homeSignup: "Registracija",
