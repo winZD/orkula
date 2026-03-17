@@ -206,6 +206,7 @@ export default function EditUser({ loaderData }: Route.ComponentProps) {
             className="cursor-text"
             type="email"
             aria-invalid={!!errors.email}
+            disabled={isEditingSelf}
             {...register("email")}
           />
           {errors.email && (
