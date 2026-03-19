@@ -39,7 +39,9 @@ export function AppSidebar({ user }: AppSidebarProps) {
     <Sidebar collapsible="icon" className="border-r border-forest/20">
       <SidebarHeader className="flex h-14 items-center justify-center border-b border-cream/20 bg-forest px-4">
         {open && (
-          <span className="text-lg font-semibold text-cream">Orkula</span>
+          <Link to={"/dashboard"} className="text-lg font-semibold text-cream">
+            Orkula
+          </Link>
         )}{" "}
       </SidebarHeader>
       <SidebarContent className="bg-cream text-forest">
