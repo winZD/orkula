@@ -1,6 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { data, redirect, useNavigate, useFetcher } from "react-router";
+import { data, redirect, useNavigate, useFetcher, Link } from "react-router";
 import { useTranslation } from "react-i18next";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
+import { ArrowLeft } from "lucide-react";
 
 export function meta() {
   return [{ title: "Add User" }];
@@ -95,10 +96,16 @@ export default function NewUser() {
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div>
+        <Link
+          to="/dashboard/settings"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-forest mb-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t("back")}
+        </Link>
         <h2 className="text-2xl font-bold">{t("addUser")}</h2>
         <p className="text-muted-foreground">{t("addUserDescription")}</p>
       </div>
-
       <form
         className="flex flex-col gap-4 max-w-2xl"
         onSubmit={handleSubmit((formData) =>
