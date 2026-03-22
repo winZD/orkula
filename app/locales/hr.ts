@@ -86,6 +86,7 @@ export default {
   deleteHarvestConfirmTitle: "Jeste li sigurni?",
   deleteHarvestConfirmDescription: "Ova radnja se ne može poništiti. Zapis o berbi bit će trajno obrisan.",
   harvestNotFound: "Berba nije pronađena",
+  harvestsByGrove: "Berbe po masliniku",
   noHarvests: "Nema berbi.",
   selectGrove: "Odaberite maslinik",
   notesPlaceholder: "Neobavezne bilješke o berbi",

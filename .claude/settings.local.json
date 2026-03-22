@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(cd \"C:\\\\Users\\\\Ivan\\\\Desktop\\\\MY PROJECTS\\\\orkula\" && npm run typecheck 2>&1)"
+      "Bash(cd \"C:\\\\Users\\\\Ivan\\\\Desktop\\\\MY PROJECTS\\\\orkula\" && npm run typecheck 2>&1)",
+      "Bash(npm install:*)"
     ]
   }
 }

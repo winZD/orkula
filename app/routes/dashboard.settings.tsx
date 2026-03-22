@@ -62,7 +62,13 @@ export async function loader({ request }: Route.LoaderArgs) {
   if (canManageUsers) {
     teamMembers = await db.user.findMany({
       where: { tenantId: user.tenantId },
-      select: { id: true, firstName: true, lastName: true, email: true, role: true },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        email: true,
+        role: true,
+      },
       orderBy: { createdAt: "asc" },
     });
   }
@@ -215,7 +221,10 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             {t("language")}
           </label>
           <Select value={selectedLang} onValueChange={setSelectedLang}>
-            <SelectTrigger id="language-select" className="w-full bg-white">
+            <SelectTrigger
+              id="language-select"
+              className="bg-white border-forest"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -247,9 +256,14 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
           <div className="flex items-center justify-between max-w-2xl">
             <div>
               <h3 className="text-xl font-bold">{t("teamMembers")}</h3>
-              <p className="text-muted-foreground">{t("teamMembersDescription")}</p>
+              <p className="text-muted-foreground">
+                {t("teamMembersDescription")}
+              </p>
             </div>
-            <Button asChild className="bg-forest text-cream hover:opacity-80 hover:bg-forest">
+            <Button
+              asChild
+              className="bg-forest text-cream hover:opacity-80 hover:bg-forest"
+            >
               <Link to="/dashboard/users/new">{t("addUser")}</Link>
             </Button>
           </div>
@@ -289,7 +303,11 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                           <TableRow key={member.id}>
                             <TableCell>
                               {isSelf ? (
-                                <Checkbox disabled checked={false} className="border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream" />
+                                <Checkbox
+                                  disabled
+                                  checked={false}
+                                  className="border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream"
+                                />
                               ) : (
                                 <Checkbox
                                   checked={selectedIds.has(member.id)}
@@ -301,39 +319,60 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                             <TableCell>
                               {member.firstName} {member.lastName}
                               {isSelf && (
-                                <span className="ml-1 text-xs text-muted-foreground">(you)</span>
+                                <span className="ml-1 text-xs text-muted-foreground">
+                                  (you)
+                                </span>
                               )}
                             </TableCell>
                             <TableCell>{member.email}</TableCell>
-                            <TableCell>{roleTranslations[member.role] ?? member.role}</TableCell>
+                            <TableCell>
+                              {roleTranslations[member.role] ?? member.role}
+                            </TableCell>
                             <TableCell>
                               <div className="flex gap-1">
-                                <Button asChild size="icon" className="h-8 w-8 bg-forest text-cream hover:opacity-80 hover:bg-forest">
-                                  <Link to={`/dashboard/users/${member.id}/edit`}>
+                                <Button
+                                  asChild
+                                  size="icon"
+                                  className="h-8 w-8 bg-forest text-cream hover:opacity-80 hover:bg-forest"
+                                >
+                                  <Link
+                                    to={`/dashboard/users/${member.id}/edit`}
+                                  >
                                     <Pencil className="h-4 w-4" />
                                   </Link>
                                 </Button>
                                 {!isSelf && (
                                   <AlertDialog>
                                     <AlertDialogTrigger asChild>
-                                      <Button variant="destructive" size="icon" className="h-8 w-8">
+                                      <Button
+                                        variant="destructive"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                      >
                                         <Trash2 className="h-4 w-4" />
                                       </Button>
                                     </AlertDialogTrigger>
                                     <AlertDialogContent>
                                       <AlertDialogHeader>
-                                        <AlertDialogTitle>{t("deleteUserConfirmTitle")}</AlertDialogTitle>
+                                        <AlertDialogTitle>
+                                          {t("deleteUserConfirmTitle")}
+                                        </AlertDialogTitle>
                                         <AlertDialogDescription>
                                           {t("deleteUserConfirmDescription")}
                                         </AlertDialogDescription>
                                       </AlertDialogHeader>
                                       <AlertDialogFooter>
-                                        <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                                        <AlertDialogCancel>
+                                          {t("cancel")}
+                                        </AlertDialogCancel>
                                         <AlertDialogAction
                                           variant="destructive"
                                           onClick={() => {
                                             fetcher.submit(
-                                              { intent: "deleteUser", userId: member.id },
+                                              {
+                                                intent: "deleteUser",
+                                                userId: member.id,
+                                              },
                                               { method: "post" },
                                             );
                                           }}
@@ -365,7 +404,11 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                         <div className="flex items-start justify-between gap-2">
                           <div className="flex items-start gap-3">
                             {isSelf ? (
-                              <Checkbox disabled checked={false} className="mt-1 border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream" />
+                              <Checkbox
+                                disabled
+                                checked={false}
+                                className="mt-1 border-forest data-[state=checked]:border-forest data-[state=checked]:bg-forest data-[state=checked]:text-cream data-[state=indeterminate]:border-forest data-[state=indeterminate]:bg-forest data-[state=indeterminate]:text-cream"
+                              />
                             ) : (
                               <Checkbox
                                 checked={selectedIds.has(member.id)}
@@ -377,15 +420,25 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                               <p className="font-medium truncate">
                                 {member.firstName} {member.lastName}
                                 {isSelf && (
-                                  <span className="ml-1 text-xs text-muted-foreground">(you)</span>
+                                  <span className="ml-1 text-xs text-muted-foreground">
+                                    (you)
+                                  </span>
                                 )}
                               </p>
-                              <p className="text-sm text-muted-foreground truncate">{member.email}</p>
-                              <p className="text-sm">{roleTranslations[member.role] ?? member.role}</p>
+                              <p className="text-sm text-muted-foreground truncate">
+                                {member.email}
+                              </p>
+                              <p className="text-sm">
+                                {roleTranslations[member.role] ?? member.role}
+                              </p>
                             </div>
                           </div>
                           <div className="flex gap-1 shrink-0">
-                            <Button asChild size="icon" className="h-8 w-8 bg-forest text-cream hover:opacity-80 hover:bg-forest">
+                            <Button
+                              asChild
+                              size="icon"
+                              className="h-8 w-8 bg-forest text-cream hover:opacity-80 hover:bg-forest"
+                            >
                               <Link to={`/dashboard/users/${member.id}/edit`}>
                                 <Pencil className="h-4 w-4" />
                               </Link>
@@ -393,24 +446,35 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                             {!isSelf && (
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button variant="destructive" size="icon" className="h-8 w-8">
+                                  <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    className="h-8 w-8"
+                                  >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
                                   <AlertDialogHeader>
-                                    <AlertDialogTitle>{t("deleteUserConfirmTitle")}</AlertDialogTitle>
+                                    <AlertDialogTitle>
+                                      {t("deleteUserConfirmTitle")}
+                                    </AlertDialogTitle>
                                     <AlertDialogDescription>
                                       {t("deleteUserConfirmDescription")}
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
-                                    <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                                    <AlertDialogCancel>
+                                      {t("cancel")}
+                                    </AlertDialogCancel>
                                     <AlertDialogAction
                                       variant="destructive"
                                       onClick={() => {
                                         fetcher.submit(
-                                          { intent: "deleteUser", userId: member.id },
+                                          {
+                                            intent: "deleteUser",
+                                            userId: member.id,
+                                          },
                                           { method: "post" },
                                         );
                                       }}
@@ -429,7 +493,9 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                 </div>
               </>
             ) : (
-              <p className="text-sm text-muted-foreground">{t("noTeamMembers")}</p>
+              <p className="text-sm text-muted-foreground">
+                {t("noTeamMembers")}
+              </p>
             )}
           </div>
 

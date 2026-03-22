@@ -86,6 +86,7 @@ export default {
   deleteHarvestConfirmTitle: "Are you sure?",
   deleteHarvestConfirmDescription: "This action cannot be undone. This will permanently delete this harvest record.",
   harvestNotFound: "Harvest not found",
+  harvestsByGrove: "Harvests by grove",
   noHarvests: "No harvests found.",
   selectGrove: "Select a grove",
   notesPlaceholder: "Optional notes about the harvest",

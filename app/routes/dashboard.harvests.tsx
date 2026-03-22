@@ -1,9 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link, useFetcher, data } from "react-router";
 import { useTranslation } from "react-i18next";
-import { Pencil, Trash2, Loader2 } from "lucide-react";
+import { Pencil, Trash2, Loader2, CalendarIcon } from "lucide-react";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 
-const METHOD_T_KEY: Record<string, string> = {
+const METHOD: Record<string, string> = {
   HAND: "methodHand",
   RAKE: "methodRake",
   MECHANICAL_SHAKER: "methodMechanicalShaker",
@@ -14,6 +15,17 @@ import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import type { Route } from "./+types/dashboard.harvests";
 import { Button } from "~/components/ui/button";
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "~/components/ui/chart";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
 import {
   Table,
   TableBody,
@@ -52,7 +64,7 @@ export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const skip = parseInt(url.searchParams.get("skip") || "0", 10);
 
-  const [harvests, totalCount, aggregates] = await Promise.all([
+  const [harvests, totalCount, aggregates, chartHarvests] = await Promise.all([
     db.harvest.findMany({
       where: { tenantId: user.tenantId },
       include: {
@@ -68,6 +80,15 @@ export async function loader({ request }: Route.LoaderArgs) {
       where: { tenantId: user.tenantId },
       _sum: { quantityKg: true, oilYieldLt: true },
     }),
+    db.harvest.findMany({
+      where: { tenantId: user.tenantId },
+      select: {
+        date: true,
+        quantityKg: true,
+        grove: { select: { name: true } },
+      },
+      orderBy: { date: "asc" },
+    }),
   ]);
 
   return {
@@ -77,6 +98,11 @@ export async function loader({ request }: Route.LoaderArgs) {
       oil: aggregates._sum.oilYieldLt ?? 0,
     },
     hasMore: skip + harvests.length < totalCount,
+    chartHarvests: chartHarvests.map((h) => ({
+      year: h.date.getFullYear(),
+      grove: h.grove.name,
+      quantityKg: Number(h.quantityKg),
+    })),
   };
 }
 
@@ -128,8 +154,52 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Harvests({ loaderData }: Route.ComponentProps) {
-  const { harvests: initialHarvests, totals, hasMore: initialHasMore } = loaderData;
+  const {
+    harvests: initialHarvests,
+    totals,
+    hasMore: initialHasMore,
+    chartHarvests,
+  } = loaderData;
   const { t } = useTranslation();
+
+  const availableYears = useMemo(() => {
+    const years = new Set(chartHarvests.map((h) => h.year));
+    return Array.from(years).sort((a, b) => b - a);
+  }, [chartHarvests]);
+
+  const [selectedYear, setSelectedYear] = useState<string>(() =>
+    availableYears.length > 0 ? String(availableYears[0]) : "",
+  );
+
+  useEffect(() => {
+    if (
+      availableYears.length > 0 &&
+      !availableYears.includes(Number(selectedYear))
+    ) {
+      setSelectedYear(String(availableYears[0]));
+    }
+  }, [availableYears, selectedYear]);
+
+  const chartData = useMemo(() => {
+    const year = Number(selectedYear);
+    const groveMap = new Map<string, number>();
+    for (const h of chartHarvests) {
+      if (h.year !== year) continue;
+      groveMap.set(h.grove, (groveMap.get(h.grove) ?? 0) + h.quantityKg);
+    }
+
+    return Array.from(groveMap.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([grove, quantityKg]) => ({
+        grove,
+        quantityKg: Math.round(quantityKg * 10) / 10,
+      }));
+  }, [chartHarvests, selectedYear]);
+
+  const chartConfig = {
+    quantityKg: { label: t("quantityKg"), color: "#1b4019" },
+  } satisfies ChartConfig;
+
   const deleteFetcher = useFetcher<typeof action>();
   const loadMoreFetcher = useFetcher<typeof loader>();
 
@@ -206,13 +276,102 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
           <h2 className="text-2xl font-bold">{t("harvests")}</h2>
           <p className="text-muted-foreground">{t("harvestsDescription")}</p>
         </div>
-        <Button asChild className="bg-forest text-cream hover:opacity-80 hover:bg-forest">
+        <Button
+          asChild
+          className="bg-forest text-cream hover:opacity-80 hover:bg-forest"
+        >
           <Link to="/dashboard/harvests/new">{t("newHarvest")}</Link>
         </Button>
       </div>
 
+      {chartHarvests.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <CardTitle>{t("harvestsByGrove")}</CardTitle>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="w-35 justify-start text-left font-normal"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {selectedYear}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-3">
+                  <div className="grid grid-cols-3 gap-2">
+                    {availableYears.map((year) => (
+                      <Button
+                        key={year}
+                        variant={
+                          String(year) === selectedYear ? "default" : "outline"
+                        }
+                        size="sm"
+                        className={
+                          String(year) === selectedYear
+                            ? "bg-forest text-cream hover:bg-forest hover:opacity-80"
+                            : ""
+                        }
+                        onClick={() => setSelectedYear(String(year))}
+                      >
+                        {year}
+                      </Button>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {chartData.length > 0 ? (
+              <ChartContainer
+                config={chartConfig}
+                className="aspect-auto h-62.5 sm:sm:h-75 w-full"
+              >
+                <BarChart
+                  data={chartData}
+                  accessibilityLayer
+                  margin={{ left: 0, right: 0 }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="grove"
+                    tickLine={false}
+                    axisLine={false}
+                    angle={-45}
+                    textAnchor="end"
+                    height={60}
+                    interval={0}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <YAxis
+                    tickLine={false}
+                    axisLine={false}
+                    width={40}
+                    tick={{ fontSize: 12 }}
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar
+                    dataKey="quantityKg"
+                    fill="var(--color-quantityKg)"
+                    radius={4}
+                  />
+                </BarChart>
+              </ChartContainer>
+            ) : (
+              <p className="text-center text-muted-foreground py-4">
+                {t("noData")}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {allHarvests.length === 0 ? (
-        <p className="text-center text-muted-foreground py-8">{t("noHarvests")}</p>
+        <p className="text-center text-muted-foreground py-8">
+          {t("noHarvests")}
+        </p>
       ) : (
         <>
           {/* Mobile cards */}
@@ -230,25 +389,38 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                       <div>
                         <CardTitle>{harvest.grove.name}</CardTitle>
                         <span className="text-xs text-forest/50">
-                          {new Date(harvest.date).toLocaleDateString("en-GB").replaceAll("/", ".")}
+                          {new Date(harvest.date)
+                            .toLocaleDateString("en-GB")
+                            .replaceAll("/", ".")}
                         </span>
                       </div>
                     </div>
                     <div className="flex gap-1">
-                      <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-8 w-8"
+                        asChild
+                      >
                         <Link to={`/dashboard/harvests/${harvest.id}/edit`}>
                           <Pencil className="h-4 w-4" />
                         </Link>
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            className="h-8 w-8 text-destructive hover:text-destructive"
+                          >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>{t("deleteHarvestConfirmTitle")}</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              {t("deleteHarvestConfirmTitle")}
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
                               {t("deleteHarvestConfirmDescription")}
                             </AlertDialogDescription>
@@ -259,7 +431,10 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                               variant="destructive"
                               onClick={() => {
                                 deleteFetcher.submit(
-                                  { intent: "deleteHarvest", harvestId: harvest.id },
+                                  {
+                                    intent: "deleteHarvest",
+                                    harvestId: harvest.id,
+                                  },
                                   { method: "post" },
                                 );
                               }}
@@ -280,10 +455,12 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                     <span>{harvest.oilYieldLt ?? "—"}</span>
                     <span className="text-forest/60">{t("oilYieldPct")}</span>
                     <span>
-                      {harvest.oilYieldPct != null ? `${harvest.oilYieldPct}%` : "—"}
+                      {harvest.oilYieldPct != null
+                        ? `${harvest.oilYieldPct}%`
+                        : "—"}
                     </span>
                     <span className="text-forest/60">{t("method")}</span>
-                    <span>{t(METHOD_T_KEY[harvest.method])}</span>
+                    <span>{t(METHOD[harvest.method])}</span>
                     {harvest.notes && (
                       <>
                         <span className="text-forest/60">{t("notes")}</span>
@@ -292,7 +469,8 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                     )}
                     <span className="text-forest/60">{t("recordedBy")}</span>
                     <span>
-                      {harvest.recordedBy.firstName} {harvest.recordedBy.lastName}
+                      {harvest.recordedBy.firstName}{" "}
+                      {harvest.recordedBy.lastName}
                     </span>
                   </div>
                 </CardContent>
@@ -352,7 +530,9 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                       />
                     </TableCell>
                     <TableCell className="font-medium">
-                      {new Date(harvest.date).toLocaleDateString("en-GB").replaceAll("/", ".")}
+                      {new Date(harvest.date)
+                        .toLocaleDateString("en-GB")
+                        .replaceAll("/", ".")}
                     </TableCell>
                     <TableCell>{harvest.grove.name}</TableCell>
                     <TableCell>{harvest.quantityKg}</TableCell>
@@ -362,40 +542,57 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                         ? `${harvest.oilYieldPct}%`
                         : "—"}
                     </TableCell>
-                    <TableCell>{t(METHOD_T_KEY[harvest.method])}</TableCell>
+                    <TableCell>{t(METHOD[harvest.method])}</TableCell>
                     <TableCell className="max-w-48 truncate">
                       {harvest.notes ?? "—"}
                     </TableCell>
                     <TableCell>
-                      {harvest.recordedBy.firstName} {harvest.recordedBy.lastName}
+                      {harvest.recordedBy.firstName}{" "}
+                      {harvest.recordedBy.lastName}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button variant="outline" size="icon" className="h-8 w-8" asChild>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          className="h-8 w-8"
+                          asChild
+                        >
                           <Link to={`/dashboard/harvests/${harvest.id}/edit`}>
                             <Pencil className="h-4 w-4" />
                           </Link>
                         </Button>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="h-8 w-8 text-destructive hover:text-destructive"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
                           <AlertDialogContent>
                             <AlertDialogHeader>
-                              <AlertDialogTitle>{t("deleteHarvestConfirmTitle")}</AlertDialogTitle>
+                              <AlertDialogTitle>
+                                {t("deleteHarvestConfirmTitle")}
+                              </AlertDialogTitle>
                               <AlertDialogDescription>
                                 {t("deleteHarvestConfirmDescription")}
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
-                              <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
+                              <AlertDialogCancel>
+                                {t("cancel")}
+                              </AlertDialogCancel>
                               <AlertDialogAction
                                 variant="destructive"
                                 onClick={() => {
                                   deleteFetcher.submit(
-                                    { intent: "deleteHarvest", harvestId: harvest.id },
+                                    {
+                                      intent: "deleteHarvest",
+                                      harvestId: harvest.id,
+                                    },
                                     { method: "post" },
                                   );
                                 }}
@@ -413,7 +610,9 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
               <TableFooter>
                 <TableRow>
                   <TableCell />
-                  <TableCell colSpan={2} className="font-medium">{t("total")}</TableCell>
+                  <TableCell colSpan={2} className="font-medium">
+                    {t("total")}
+                  </TableCell>
                   <TableCell>{totals.quantity.toFixed(1)}</TableCell>
                   <TableCell>{totals.oil.toFixed(1)}</TableCell>
                   <TableCell colSpan={5} />
@@ -427,7 +626,9 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
       {/* Sentinel for infinite scroll */}
       {hasMore && (
         <div ref={sentinelRef} className="flex justify-center py-4">
-          {isLoadingMore && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+          {isLoadingMore && (
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          )}
         </div>
       )}
 
@@ -449,10 +650,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={handleBulkDelete}
-            >
+            <AlertDialogAction variant="destructive" onClick={handleBulkDelete}>
               {t("confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
