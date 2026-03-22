@@ -182,7 +182,6 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
         color: CHART_COLORS[i % CHART_COLORS.length],
       };
     });
-    console.log({ config });
     return config;
   }, [groveAreas, t]);
 

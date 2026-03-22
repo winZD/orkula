@@ -81,3 +81,21 @@ CRUD routes follow a consistent naming convention:
 Delete operations use an `AlertDialog` confirmation and are handled as actions on the list page (not separate routes), using `fetcher.submit({ intent: "delete<Resource>", <resource>Id: id }, { method: "post" })`.
 
 All form pages include a back link to the parent list page, cancel/submit buttons, and `useFetcher` for form submission.
+
+### Charts
+
+Recharts wrapped with shadcn chart components from `~/components/ui/chart`. Use `ChartContainer` with a `ChartConfig` object that maps data keys to labels and colors. Shared color palette `CHART_COLORS` is exported from `~/lib/utils`. Tooltips use `ChartTooltip` + `ChartTooltipContent`.
+
+### Custom Hooks
+
+- `useRowSelection(allItemIds)` (`app/hooks/use-row-selection.ts`) — manages table row selection state with `selectedIds`, `toggleItem`, `toggleAll`, bulk selection support. Used with `BulkActionBar` component.
+- `useIsMobile()` (`app/hooks/use-mobile.ts`) — viewport width < 768px detection.
+
+### Reusable Components
+
+- `BulkActionBar` (`app/components/bulk-action-bar.tsx`) — fixed floating bar at bottom when items are selected, provides clear/delete actions.
+- `SummaryCard` (`app/components/summary-card.tsx`) — metric display card with title and value.
+
+### Pagination
+
+List pages use infinite scroll: loader returns `hasMore` boolean, component uses `IntersectionObserver` on a sentinel element, `useFetcher` loads next page via `?skip=` param, appends results to state. Page size is `PAGE_SIZE = 20`.
