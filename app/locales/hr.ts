@@ -62,6 +62,8 @@ export default {
   deleteGrove: "Obriši maslinik",
   deleteGroveConfirmTitle: "Jeste li sigurni?",
   deleteGroveConfirmDescription: "Ova radnja se ne može poništiti. Maslinik i svi povezani podaci bit će trajno obrisani.",
+  areaDistribution: "Raspodjela površine",
+  varietyDistribution: "Raspodjela sorti",
   noGroves: "Nema maslinika.",
   namePlaceholder: "npr. Sjeverni maslinik",
   locationPlaceholder: "npr. Istra",

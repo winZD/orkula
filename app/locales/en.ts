@@ -62,6 +62,8 @@ export default {
   deleteGrove: "Delete grove",
   deleteGroveConfirmTitle: "Are you sure?",
   deleteGroveConfirmDescription: "This action cannot be undone. This will permanently delete this grove and all its associated data.",
+  areaDistribution: "Area Distribution",
+  varietyDistribution: "Variety Distribution",
   noGroves: "No groves found.",
   namePlaceholder: "e.g. Northern grove",
   locationPlaceholder: "e.g. Istria",

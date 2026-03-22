@@ -1,11 +1,19 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Link, useFetcher, data } from "react-router";
 import { useTranslation } from "react-i18next";
 import { Pencil, Trash2, Loader2 } from "lucide-react";
+import { Pie, PieChart, Label } from "recharts";
 import { db } from "~/db/prisma";
+import { CHART_COLORS } from "~/lib/utils";
 import { getSessionUser } from "~/lib/auth.server";
 import type { Route } from "./+types/dashboard.groves";
 import { Button } from "~/components/ui/button";
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "~/components/ui/chart";
 import {
   Table,
   TableBody,
@@ -44,7 +52,14 @@ export async function loader({ request }: Route.LoaderArgs) {
   const url = new URL(request.url);
   const skip = parseInt(url.searchParams.get("skip") || "0", 10);
 
-  const [groves, totalCount, aggregates, harvestCount] = await Promise.all([
+  const [
+    groves,
+    totalCount,
+    aggregates,
+    harvestCount,
+    groveAreas,
+    varietyCounts,
+  ] = await Promise.all([
     db.grove.findMany({
       where: { tenantId: user.tenantId },
       include: {
@@ -61,10 +76,26 @@ export async function loader({ request }: Route.LoaderArgs) {
       _sum: { area: true, treeCount: true },
     }),
     db.harvest.count({ where: { tenantId: user.tenantId } }),
+    db.grove.findMany({
+      where: { tenantId: user.tenantId, area: { not: null, gt: 0 } },
+      select: { name: true, area: true },
+      orderBy: { area: "desc" },
+    }),
+    db.groveVariety.groupBy({
+      by: ["variety"],
+      where: { grove: { tenantId: user.tenantId } },
+      _sum: { treeCount: true },
+      _count: true,
+    }),
   ]);
 
   return {
     groves,
+    groveAreas: groveAreas as { name: string; area: number }[],
+    varietyCounts: varietyCounts.map((v) => ({
+      variety: v.variety,
+      trees: v._sum.treeCount ?? v._count,
+    })),
     totals: {
       area: aggregates._sum.area ?? 0,
       trees: aggregates._sum.treeCount ?? 0,
@@ -122,10 +153,60 @@ export async function action({ request }: Route.ActionArgs) {
 }
 
 export default function Groves({ loaderData }: Route.ComponentProps) {
-  const { groves: initialGroves, totals, hasMore: initialHasMore } = loaderData;
+  const {
+    groves: initialGroves,
+    groveAreas,
+    varietyCounts,
+    totals,
+    hasMore: initialHasMore,
+  } = loaderData;
   const { t } = useTranslation();
   const deleteFetcher = useFetcher<typeof action>();
   const loadMoreFetcher = useFetcher<typeof loader>();
+
+  const areaChartData = useMemo(
+    () =>
+      groveAreas.map((g, i) => ({
+        name: g.name,
+        area: g.area,
+        fill: CHART_COLORS[i % CHART_COLORS.length],
+      })),
+    [groveAreas],
+  );
+
+  const areaChartConfig = useMemo(() => {
+    const config: ChartConfig = { area: { label: t("area") } };
+    groveAreas.forEach((g, i) => {
+      config[g.name] = {
+        label: g.name,
+        color: CHART_COLORS[i % CHART_COLORS.length],
+      };
+    });
+    console.log({ config });
+    return config;
+  }, [groveAreas, t]);
+
+  const varietyChartData = useMemo(
+    () =>
+      varietyCounts.map((v, i) => ({
+        variety: v.variety.charAt(0) + v.variety.slice(1).toLowerCase(),
+        trees: v.trees,
+        fill: CHART_COLORS[i % CHART_COLORS.length],
+      })),
+    [varietyCounts],
+  );
+
+  const varietyChartConfig = useMemo(() => {
+    const config: ChartConfig = { trees: { label: t("trees") } };
+    varietyCounts.forEach((v, i) => {
+      const label = v.variety.charAt(0) + v.variety.slice(1).toLowerCase();
+      config[label] = {
+        label,
+        color: CHART_COLORS[i % CHART_COLORS.length],
+      };
+    });
+    return config;
+  }, [varietyCounts, t]);
 
   const [allGroves, setAllGroves] = useState(initialGroves);
   const [hasMore, setHasMore] = useState(initialHasMore);
@@ -207,6 +288,126 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
           <Link to="/dashboard/groves/new">{t("newGrove")}</Link>
         </Button>
       </div>
+
+      {(areaChartData.length > 0 || varietyChartData.length > 0) && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {areaChartData.length > 0 && (
+            <Card className="bg-cream">
+              <CardHeader className="pb-0">
+                <CardTitle>{t("areaDistribution")}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 pb-0">
+                <ChartContainer
+                  config={areaChartConfig}
+                  className="mx-auto aspect-square max-h-62.5"
+                >
+                  <PieChart>
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel />}
+                    />
+                    <Pie
+                      data={areaChartData}
+                      dataKey="area"
+                      nameKey="name"
+                      innerRadius={60}
+                      strokeWidth={5}
+                    >
+                      <Label
+                        content={({ viewBox }) => {
+                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                            return (
+                              <text
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                              >
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={viewBox.cy}
+                                  className="fill-foreground text-3xl font-bold"
+                                >
+                                  {totals.area.toLocaleString()}
+                                </tspan>
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={(viewBox.cy || 0) + 24}
+                                  className="fill-muted-foreground"
+                                >
+                                  m²
+                                </tspan>
+                              </text>
+                            );
+                          }
+                        }}
+                      />
+                    </Pie>
+                  </PieChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          )}
+
+          {varietyChartData.length > 0 && (
+            <Card className="bg-cream">
+              <CardHeader className="pb-0">
+                <CardTitle>{t("varietyDistribution")}</CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 pb-0">
+                <ChartContainer
+                  config={varietyChartConfig}
+                  className="mx-auto aspect-square max-h-62.5"
+                >
+                  <PieChart>
+                    <ChartTooltip
+                      cursor={false}
+                      content={<ChartTooltipContent hideLabel />}
+                    />
+                    <Pie
+                      data={varietyChartData}
+                      dataKey="trees"
+                      nameKey="variety"
+                      innerRadius={60}
+                      strokeWidth={5}
+                    >
+                      <Label
+                        content={({ viewBox }) => {
+                          if (viewBox && "cx" in viewBox && "cy" in viewBox) {
+                            return (
+                              <text
+                                x={viewBox.cx}
+                                y={viewBox.cy}
+                                textAnchor="middle"
+                                dominantBaseline="middle"
+                              >
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={viewBox.cy}
+                                  className="fill-foreground text-3xl font-bold"
+                                >
+                                  {totals.trees.toLocaleString()}
+                                </tspan>
+                                <tspan
+                                  x={viewBox.cx}
+                                  y={(viewBox.cy || 0) + 24}
+                                  className="fill-muted-foreground"
+                                >
+                                  {t("trees").toLowerCase()}
+                                </tspan>
+                              </text>
+                            );
+                          }
+                        }}
+                      />
+                    </Pie>
+                  </PieChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
 
       {allGroves.length === 0 ? (
         <p className="text-center text-muted-foreground py-8">
@@ -487,10 +688,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-            <AlertDialogAction
-              variant="destructive"
-              onClick={handleBulkDelete}
-            >
+            <AlertDialogAction variant="destructive" onClick={handleBulkDelete}>
               {t("confirm")}
             </AlertDialogAction>
           </AlertDialogFooter>
