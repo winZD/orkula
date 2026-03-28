@@ -167,6 +167,66 @@ export default {
     "Moderna platforma za upravljanje poljoprivredom. Pratite svoja polja, nadzirite usjeve i upravljajte svim operacijama na jednom mjestu.",
   homeCta: "Započnite",
 
+  // Finances
+  finances: "Financije",
+  financesDescription: "Pratite troškove i prihode.",
+  newTransaction: "Nova transakcija",
+  newTransactionDescription: "Zabilježite novi trošak ili prihod.",
+  editTransaction: "Uredi transakciju",
+  editTransactionDescription: "Uredite podatke transakcije.",
+  saveTransaction: "Spremi transakciju",
+  expense: "Trošak",
+  income: "Prihod",
+  amount: "Iznos (€)",
+  category: "Kategorija",
+  description: "Opis",
+  descriptionPlaceholder: "Neobavezni opis",
+  totalQuantity: "Ukupna količina",
+  unit: "Jedinica",
+  unitPlaceholder: "npr. kg, L, kom",
+  transactionType: "Vrsta",
+  totalExpenses: "Ukupni troškovi",
+  totalIncome: "Ukupni prihodi",
+  netResult: "Neto rezultat",
+  profit: "Dobit",
+  loss: "Gubitak",
+  noTransactions: "Nema transakcija.",
+  deleteTransaction: "Obriši transakciju",
+  deleteTransactionConfirmTitle: "Jeste li sigurni?",
+  deleteTransactionConfirmDescription:
+    "Ova radnja se ne može poništiti. Transakcija i sve raspodjele po maslinicima bit će trajno obrisane.",
+  transactionNotFound: "Transakcija nije pronađena",
+  bulkDeleteTransactionsConfirmDescription:
+    "Ova radnja se ne može poništiti. Odabrane transakcije bit će trajno obrisane.",
+  selectCategory: "Odaberite kategoriju",
+  selectType: "Odaberite vrstu",
+  year: "Godina",
+  all: "Sve",
+
+  // Grove Allocations
+  groveAllocations: "Raspodjela po maslinicima",
+  groveAllocationsDescription:
+    "Raspodijelite kupljenu količinu po maslinicima.",
+  addAllocation: "Dodaj raspodjelu",
+  allocatedQuantity: "Raspodijeljeno",
+  remainingQuantity: "Preostalo",
+  calculatedCost: "Trošak",
+  allocationExceedsTotal: "Raspodijeljena količina premašuje ukupnu količinu.",
+  allocate: "Raspodjeli",
+  deleteAllocation: "Ukloni raspodjelu",
+  quantity: "Količina",
+  transactionSummary: "Sažetak transakcije",
+
+  // Categories
+  categoryNotFound: "Kategorija nije pronađena",
+  categoryExists: "Kategorija s ovim nazivom već postoji.",
+  createCategoryInline: "Kreiraj novu kategoriju",
+  categoryName: "Naziv kategorije",
+
+  // Validation (finances)
+  validationCategoryRequired: "Kategorija je obavezna",
+  validationInvalidTransactionType: "Nevažeća vrsta transakcije",
+
   // Errors
   errorOops: "Ups!",
   errorUnexpected: "Došlo je do neočekivane greške.",

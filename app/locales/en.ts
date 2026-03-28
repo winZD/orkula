@@ -167,6 +167,66 @@ export default {
     "A modern agriculture management platform. Track your fields, monitor crops, and manage your farm operations all in one place.",
   homeCta: "Get Started",
 
+  // Finances
+  finances: "Finances",
+  financesDescription: "Track expenses and incomes.",
+  newTransaction: "New transaction",
+  newTransactionDescription: "Record a new expense or income.",
+  editTransaction: "Edit transaction",
+  editTransactionDescription: "Edit transaction details.",
+  saveTransaction: "Save transaction",
+  expense: "Expense",
+  income: "Income",
+  amount: "Amount (€)",
+  category: "Category",
+  description: "Description",
+  descriptionPlaceholder: "Optional description",
+  totalQuantity: "Total quantity",
+  unit: "Unit",
+  unitPlaceholder: "e.g. kg, L, pcs",
+  transactionType: "Type",
+  totalExpenses: "Total Expenses",
+  totalIncome: "Total Income",
+  netResult: "Net Result",
+  profit: "Profit",
+  loss: "Loss",
+  noTransactions: "No transactions found.",
+  deleteTransaction: "Delete transaction",
+  deleteTransactionConfirmTitle: "Are you sure?",
+  deleteTransactionConfirmDescription:
+    "This action cannot be undone. This will permanently delete this transaction and all its grove allocations.",
+  transactionNotFound: "Transaction not found",
+  bulkDeleteTransactionsConfirmDescription:
+    "This action cannot be undone. The selected transactions will be permanently deleted.",
+  selectCategory: "Select a category",
+  selectType: "Select type",
+  year: "Year",
+  all: "All",
+
+  // Grove Allocations
+  groveAllocations: "Grove allocations",
+  groveAllocationsDescription:
+    "Distribute the purchased quantity across groves.",
+  addAllocation: "Add allocation",
+  allocatedQuantity: "Allocated",
+  remainingQuantity: "Remaining",
+  calculatedCost: "Cost",
+  allocationExceedsTotal: "Allocated quantity exceeds total quantity.",
+  allocate: "Allocate",
+  deleteAllocation: "Remove allocation",
+  quantity: "Quantity",
+  transactionSummary: "Transaction summary",
+
+  // Categories
+  categoryNotFound: "Category not found",
+  categoryExists: "A category with this name already exists.",
+  createCategoryInline: "Create new category",
+  categoryName: "Category name",
+
+  // Validation (finances)
+  validationCategoryRequired: "Category is required",
+  validationInvalidTransactionType: "Invalid transaction type",
+
   // Errors
   errorOops: "Oops!",
   errorUnexpected: "An unexpected error occurred.",

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router";
-import { LayoutDashboard, TreePine, Wheat, Settings } from "lucide-react";
+import { LayoutDashboard, TreePine, Wheat, Wallet, Settings } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Sidebar,
@@ -19,6 +19,7 @@ const navItems = [
   { titleKey: "dashboard", href: "/dashboard", icon: LayoutDashboard },
   { titleKey: "groves", href: "/dashboard/groves", icon: TreePine },
   { titleKey: "harvests", href: "/dashboard/harvests", icon: Wheat },
+  { titleKey: "finances", href: "/dashboard/finances", icon: Wallet },
 ] as const;
 
 interface AppSidebarProps {
