@@ -245,8 +245,82 @@ export default function AllocateTransaction({
         </CardContent>
       </Card>
 
+      {/* Add new allocation */}
+      {availableGroves.length > 0 && remainingQuantity > 0 && (
+        <Card className="bg-cream">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base">{t("addAllocation")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row gap-3 items-start">
+                <div className="flex flex-col gap-1 flex-1">
+                  <label className="text-sm font-medium">{t("grove")}</label>
+                  <Select
+                    value={selectedGroveId}
+                    onValueChange={setSelectedGroveId}
+                  >
+                    <SelectTrigger className="w-full bg-white">
+                      <SelectValue placeholder={t("selectGrove")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableGroves.map((grove) => (
+                        <SelectItem key={grove.id} value={grove.id}>
+                          {grove.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex flex-col gap-1 flex-1">
+                  <label className="text-sm font-medium">
+                    {t("quantity")} ({transaction.unit ?? ""})
+                  </label>
+                  <Input
+                    className="cursor-text bg-white"
+                    type="number"
+                    step="0.01"
+                    placeholder={`max ${remainingQuantity.toFixed(2)}`}
+                    value={quantity}
+                    onChange={(e) => setQuantity(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        handleAddAllocation();
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-medium">
+                    {t("calculatedCost")}
+                  </label>
+                  <div className="h-8 flex items-center text-sm font-medium px-3 border rounded-md bg-white">
+                    €{previewCost.toFixed(2)}
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end">
+                <Button
+                  type="button"
+                  className="bg-forest text-cream hover:opacity-80 hover:bg-forest"
+                  onClick={handleAddAllocation}
+                  disabled={
+                    !selectedGroveId ||
+                    !quantity ||
+                    fetcher.state === "submitting"
+                  }
+                >
+                  {t("addAllocation")}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Allocation summary */}
-      <div className="flex flex-wrap gap-4 text-sm">
+      <div className="flex flex-wrap gap-4 text-sm border rounded-lg bg-forest text-white p-4">
         <div className="flex gap-1">
           <span className="font-medium">{t("allocatedQuantity")}:</span>
           <span>
@@ -403,76 +477,6 @@ export default function AllocateTransaction({
             </Table>
           </div>
         </div>
-      )}
-
-      {/* Add new allocation */}
-      {availableGroves.length > 0 && remainingQuantity > 0 && (
-        <Card className="bg-cream">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">{t("addAllocation")}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col sm:flex-row gap-3 items-end">
-              <div className="flex flex-col gap-1 flex-1">
-                <label className="text-sm font-medium">{t("grove")}</label>
-                <Select
-                  value={selectedGroveId}
-                  onValueChange={setSelectedGroveId}
-                >
-                  <SelectTrigger className="w-full bg-white">
-                    <SelectValue placeholder={t("selectGrove")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableGroves.map((grove) => (
-                      <SelectItem key={grove.id} value={grove.id}>
-                        {grove.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="flex flex-col gap-1 flex-1">
-                <label className="text-sm font-medium">
-                  {t("quantity")} ({transaction.unit ?? ""})
-                </label>
-                <Input
-                  className="cursor-text bg-white"
-                  type="number"
-                  step="0.01"
-                  placeholder={`max ${remainingQuantity.toFixed(2)}`}
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      handleAddAllocation();
-                    }
-                  }}
-                />
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-sm font-medium">
-                  {t("calculatedCost")}
-                </label>
-                <div className="h-9 flex items-center text-sm font-medium px-3 border rounded-md bg-white">
-                  €{previewCost.toFixed(2)}
-                </div>
-              </div>
-              <Button
-                type="button"
-                className="bg-forest text-cream hover:opacity-80 hover:bg-forest"
-                onClick={handleAddAllocation}
-                disabled={
-                  !selectedGroveId ||
-                  !quantity ||
-                  fetcher.state === "submitting"
-                }
-              >
-                {t("addAllocation")}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       )}
     </div>
   );
