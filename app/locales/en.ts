@@ -220,6 +220,7 @@ export default {
   // Categories
   categoryNotFound: "Category not found",
   categoryExists: "A category with this name already exists.",
+  categoryHasTransactions: "Cannot delete a category that has transactions.",
   createCategoryInline: "Create new category",
   categoryName: "Category name",
 

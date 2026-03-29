@@ -3,7 +3,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { data, redirect, useNavigate, useFetcher, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import { transactionSchema, categorySchema } from "~/lib/validations";
@@ -29,7 +29,12 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   const categories = await db.category.findMany({
     where: { tenantId: user.tenantId },
-    select: { id: true, name: true, type: true },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      _count: { select: { transactions: true } },
+    },
     orderBy: { name: "asc" },
   });
 
@@ -79,6 +84,28 @@ export async function action({ request }: Route.ActionArgs) {
         type: newCategory.type,
       },
     });
+  }
+
+  // Inline category deletion
+  if (intent === "deleteCategory") {
+    const categoryId = formData.get("categoryId") as string;
+
+    const category = await db.category.findFirst({
+      where: { id: categoryId, tenantId: user.tenantId },
+      include: { _count: { select: { transactions: true } } },
+    });
+
+    if (!category) {
+      return data({ error: "categoryNotFound" }, { status: 400 });
+    }
+
+    if (category._count.transactions > 0) {
+      return data({ error: "categoryHasTransactions" }, { status: 400 });
+    }
+
+    await db.category.delete({ where: { id: categoryId } });
+
+    return data({ deletedCategoryId: categoryId });
   }
 
   // Create transaction
@@ -137,6 +164,7 @@ export default function NewTransaction({ loaderData }: Route.ComponentProps) {
     defaultValues: {
       type: "EXPENSE" as "EXPENSE" | "INCOME",
       categoryId: "",
+      date: new Date().toISOString().split("T")[0],
     },
   });
 
@@ -149,18 +177,31 @@ export default function NewTransaction({ loaderData }: Route.ComponentProps) {
   const [pendingCategoryId, setPendingCategoryId] = useState<string | null>(
     null,
   );
+  const [categorySelectOpen, setCategorySelectOpen] = useState(false);
 
-  // When inline category is created, add it to the list
+  // When inline category is created or deleted, update the list
   useEffect(() => {
     const d = categoryFetcher.data;
-    if (d && "newCategory" in d) {
+    if (!d) return;
+
+    if ("newCategory" in d) {
       const nc = d.newCategory;
       setCategories((prev) =>
-        [...prev, nc].sort((a, b) => a.name.localeCompare(b.name)),
+        [...prev, { ...nc, _count: { transactions: 0 } }].sort((a, b) =>
+          a.name.localeCompare(b.name),
+        ),
       );
       setPendingCategoryId(nc.id);
       setShowNewCategory(false);
       setNewCategoryName("");
+    }
+
+    if ("deletedCategoryId" in d) {
+      const deletedId = d.deletedCategoryId;
+      setCategories((prev) => prev.filter((c) => c.id !== deletedId));
+      if (watch("categoryId") === deletedId) {
+        setValue("categoryId", "");
+      }
     }
   }, [categoryFetcher.data]);
 
@@ -175,7 +216,9 @@ export default function NewTransaction({ loaderData }: Route.ComponentProps) {
     }
   }, [pendingCategoryId, categories, setValue]);
 
-  const filteredCategories = categories.filter((c) => c.type === selectedType);
+  const filteredCategories = categories.filter(
+    (c) => c.type === selectedType && c._count.transactions === 0,
+  );
 
   // Clear category selection when type changes and current category doesn't match
   useEffect(() => {
@@ -300,14 +343,45 @@ export default function NewTransaction({ loaderData }: Route.ComponentProps) {
               name="categoryId"
               control={control}
               render={({ field }) => (
-                <Select value={field.value} onValueChange={field.onChange}>
+                <Select
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  open={categorySelectOpen}
+                  onOpenChange={setCategorySelectOpen}
+                >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder={t("selectCategory")} />
                   </SelectTrigger>
                   <SelectContent>
                     {filteredCategories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
+                      <SelectItem
+                        key={cat.id}
+                        value={cat.id}
+                        className="[&>span:last-child]:w-full [&_svg]:pointer-events-auto"
+                      >
+                        <span className="flex items-center justify-between w-full gap-2">
+                          <span>{cat.name}</span>
+                          {categorySelectOpen &&
+                            cat._count.transactions === 0 && (
+                              <span
+                                role="button"
+                                className="text-destructive hover:bg-destructive/10 rounded p-0.5 shrink-0"
+                                onPointerDown={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  categoryFetcher.submit(
+                                    {
+                                      intent: "deleteCategory",
+                                      categoryId: cat.id,
+                                    },
+                                    { method: "post" },
+                                  );
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </span>
+                            )}
+                        </span>
                       </SelectItem>
                     ))}
                   </SelectContent>

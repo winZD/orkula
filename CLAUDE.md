@@ -38,7 +38,7 @@ Path alias: `~/*` maps to `./app/*`.
 
 PostgreSQL via Prisma ORM (`@prisma/adapter-pg`). Generated client is imported from `generated/prisma/client` (not `@prisma/client`). Requires `DATABASE_URL` in `.env`.
 
-Core models: Tenant → Users, Groves, Harvests. Users have roles (OWNER, ADMIN, MEMBER). Groves track olive varieties via GroveVariety join model. Harvests track method via `HarvestMethod` enum (HAND, RAKE, MECHANICAL_SHAKER, VIBRATOR, NET).
+Core models: Tenant → Users, Groves, Harvests, Categories, Transactions. Users have roles (OWNER, ADMIN, MEMBER). Groves track olive varieties via GroveVariety join model. Harvests track method via `HarvestMethod` enum (HAND, RAKE, MECHANICAL_SHAKER, VIBRATOR, NET). Transactions (EXPENSE/INCOME) belong to a Category (scoped per tenant and type). Expense transactions can be allocated across groves via GroveApplication join model (tracks quantity and calculated cost per grove).
 
 ### Multi-Tenancy
 
@@ -77,8 +77,11 @@ CRUD routes follow a consistent naming convention:
 - List: `dashboard.<resource>.tsx` (includes delete action via `intent` field in form data)
 - Create: `dashboard.<resource>.new.tsx`
 - Edit: `dashboard.<resource>.$<id>.edit.tsx`
+- Special: `dashboard.<resource>.$<id>.<action>.tsx` (e.g., allocate route for finances)
 
 Delete operations use an `AlertDialog` confirmation and are handled as actions on the list page (not separate routes), using `fetcher.submit({ intent: "delete<Resource>", <resource>Id: id }, { method: "post" })`.
+
+Some forms support inline entity creation (e.g., creating a category while adding a transaction) using a separate `useFetcher` with an `intent` discriminator in the same route action.
 
 All form pages include a back link to the parent list page, cancel/submit buttons, and `useFetcher` for form submission.
 

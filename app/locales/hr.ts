@@ -220,6 +220,7 @@ export default {
   // Categories
   categoryNotFound: "Kategorija nije pronađena",
   categoryExists: "Kategorija s ovim nazivom već postoji.",
+  categoryHasTransactions: "Nije moguće obrisati kategoriju koja ima transakcije.",
   createCategoryInline: "Kreiraj novu kategoriju",
   categoryName: "Naziv kategorije",
 
