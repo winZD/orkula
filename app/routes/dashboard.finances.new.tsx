@@ -3,7 +3,15 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { data, redirect, useNavigate, useFetcher, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft, Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2, CalendarIcon } from "lucide-react";
+import { format, parse } from "date-fns";
+import { Calendar } from "~/components/ui/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "~/components/ui/popover";
+import { cn } from "~/lib/utils";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import { transactionSchema, categorySchema } from "~/lib/validations";
@@ -301,12 +309,50 @@ export default function NewTransaction({ loaderData }: Route.ComponentProps) {
             <label htmlFor="date" className="text-sm font-medium">
               {t("date")} *
             </label>
-            <Input
-              id="date"
-              className="cursor-text"
-              type="date"
-              aria-invalid={!!errors.date}
-              {...register("date")}
+            <Controller
+              name="date"
+              control={control}
+              render={({ field }) => {
+                const dateValue = field.value
+                  ? parse(field.value, "yyyy-MM-dd", new Date())
+                  : undefined;
+                return (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !field.value && "text-muted-foreground",
+                        )}
+                        aria-invalid={!!errors.date}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {field.value && dateValue && !isNaN(dateValue.getTime())
+                          ? format(dateValue, "dd.MM.yyyy")
+                          : t("selectDate")}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={
+                          dateValue && !isNaN(dateValue.getTime())
+                            ? dateValue
+                            : undefined
+                        }
+                        onSelect={(day) => {
+                          field.onChange(
+                            day ? format(day, "yyyy-MM-dd") : "",
+                          );
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                );
+              }}
             />
             {errors.date && (
               <p className="text-xs text-destructive">

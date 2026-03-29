@@ -200,6 +200,7 @@ export default {
     "Ova radnja se ne može poništiti. Odabrane transakcije bit će trajno obrisane.",
   selectCategory: "Odaberite kategoriju",
   selectType: "Odaberite vrstu",
+  selectDate: "Odaberite datum",
   year: "Godina",
   all: "Sve",
 

@@ -200,6 +200,7 @@ export default {
     "This action cannot be undone. The selected transactions will be permanently deleted.",
   selectCategory: "Select a category",
   selectType: "Select type",
+  selectDate: "Select date",
   year: "Year",
   all: "All",
 
