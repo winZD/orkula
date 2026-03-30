@@ -22,7 +22,7 @@ No test runner is currently configured.
 
 ### Framework & Routing
 
-React Router v7 with SSR enabled, file-based routing defined in `app/routes.ts`. Routes use the loader/action pattern for data fetching and mutations (no client-side state management library). Route types are auto-generated in `.react-router/types/` — import as `import type { Route } from "./+types/<route-name>"`.
+React Router v7 with SSR enabled (`react-router.config.ts` has `v8_middleware: true` future flag), file-based routing defined in `app/routes.ts`. Routes use the loader/action pattern for data fetching and mutations (no client-side state management library). Route types are auto-generated in `.react-router/types/` — import as `import type { Route } from "./+types/<route-name>"`. Server rendering uses `renderToPipeableStream` with bot detection (`isbot`) to choose between `onAllReady` (bots) and `onShellReady` (browsers) for streaming.
 
 Path alias: `~/*` maps to `./app/*`.
 
@@ -38,7 +38,7 @@ Path alias: `~/*` maps to `./app/*`.
 
 PostgreSQL via Prisma ORM (`@prisma/adapter-pg`). Generated client is imported from `generated/prisma/client` (not `@prisma/client`). Requires `DATABASE_URL` in `.env`.
 
-Core models: Tenant → Users, Groves, Harvests, Categories, Transactions. Users have roles (OWNER, ADMIN, MEMBER). Groves track olive varieties via GroveVariety join model. Harvests track method via `HarvestMethod` enum (HAND, RAKE, MECHANICAL_SHAKER, VIBRATOR, NET). Transactions (EXPENSE/INCOME) belong to a Category (scoped per tenant and type). Expense transactions can be allocated across groves via GroveApplication join model (tracks quantity and calculated cost per grove).
+Core models: Tenant → Users, Groves, Harvests, Categories, Transactions. Users have roles (OWNER, ADMIN, MEMBER). Groves track olive varieties via GroveVariety join model (`OliveVariety` enum: OBLICA, LEVANTINKA, LASTOVKA, BUZA, DROBNICA, LECCINO, FRANTOIO, PENDOLINO, CORATINA, ARBEQUINA, PICUAL, KORONEIKI, OTHER). Harvests track method via `HarvestMethod` enum (HAND, RAKE, MECHANICAL_SHAKER, VIBRATOR, NET). Transactions (EXPENSE/INCOME) belong to a Category (scoped per tenant and type). Expense transactions can be allocated across groves via GroveApplication join model (tracks quantity and calculated cost per grove). Transactions have composite indexes on `(tenantId, date)` and `(tenantId, type)`.
 
 ### Multi-Tenancy
 
@@ -46,7 +46,7 @@ All dashboard loaders call `getSessionUser(request)` which returns the user with
 
 ### Authentication
 
-Session-based auth in `app/lib/auth.server.ts`. Tokens stored in DB with 30-day expiry, set as httpOnly cookies (`session_token`). Passwords hashed with Node.js crypto scrypt. Dashboard routes are protected via loader checks that redirect to `/login`.
+Session-based auth in `app/lib/auth.server.ts`. Tokens stored in DB with 30-day expiry, set as httpOnly cookies (`session_token`). Passwords hashed with Node.js crypto scrypt. Dashboard routes are protected via loader checks that redirect to `/login`. A background cleanup task (`app/lib/cleanup.server.ts`) purges expired sessions every 24 hours, initialized from the root loader.
 
 ### Form Validation
 
