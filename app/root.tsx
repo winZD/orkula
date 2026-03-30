@@ -13,6 +13,7 @@ import {
   getLocale,
   i18nextMiddleware,
 } from "./middleware/i18next";
+import { startSessionCleanup } from "./lib/cleanup.server";
 import "./app.css";
 
 export const middleware = [i18nextMiddleware];
@@ -31,6 +32,7 @@ export const links: Route.LinksFunction = () => [
 ];
 
 export async function loader({ context }: Route.LoaderArgs) {
+  startSessionCleanup();
   const locale = getLocale(context);
   return { locale };
 }
