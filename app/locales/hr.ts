@@ -43,6 +43,14 @@ export default {
   recentHarvests: "Nedavne berbe",
   quickActions: "Brze radnje",
   noData: "Nema dostupnih podataka.",
+  costPerKg: "Trošak po kg",
+  costPerLiter: "Trošak po litri",
+  harvestByYear: "Berba po godini",
+  expenseByCategory: "Troškovi po kategoriji",
+  expenses: "Troškovi",
+  efficiency: "Učinkovitost",
+  viewMetrics: "Prikaži metrike",
+  charts: "Pregled berbe i troškova",
 
   // Groves
   groves: "Maslinici",

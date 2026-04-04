@@ -43,6 +43,14 @@ export default {
   recentHarvests: "Recent Harvests",
   quickActions: "Quick Actions",
   noData: "No data available.",
+  costPerKg: "Cost per kg",
+  costPerLiter: "Cost per liter",
+  harvestByYear: "Harvest by Year",
+  expenseByCategory: "Expenses by Category",
+  expenses: "Expenses",
+  efficiency: "Efficiency",
+  viewMetrics: "View metrics",
+  charts: "Harvest & Expenses overview",
 
   // Groves
   groves: "Groves",

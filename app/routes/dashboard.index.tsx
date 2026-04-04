@@ -1,11 +1,36 @@
-import { Link } from "react-router";
+import { useState, useMemo } from "react";
+import { Link, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Pie,
+  PieChart,
+  Label,
+} from "recharts";
 import { db } from "~/db/prisma";
+import { CHART_COLORS } from "~/lib/utils";
 import { getSessionUser } from "~/lib/auth.server";
 import type { Route } from "./+types/dashboard.index";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { SummaryCard } from "~/components/summary-card";
+import {
+  type ChartConfig,
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "~/components/ui/chart";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import {
   Table,
   TableBody,
@@ -24,8 +49,25 @@ export async function loader({ request }: Route.LoaderArgs) {
   if (!user) throw new Response("Unauthorized", { status: 401 });
 
   const tenantId = user.tenantId;
+  const url = new URL(request.url);
+  const currentYear = parseInt(
+    url.searchParams.get("year") || String(new Date().getFullYear()),
+    10,
+  );
+  const yearStart = new Date(currentYear, 0, 1);
+  const yearEnd = new Date(currentYear + 1, 0, 1);
 
-  const [groves, harvestAgg, recentHarvests] = await Promise.all([
+  const [
+    groves,
+    harvestAgg,
+    recentHarvests,
+    expenseSum,
+    incomeSum,
+    yearHarvestAgg,
+    yearlyHarvestsRaw,
+    expenseTransactions,
+    yearsRaw,
+  ] = await Promise.all([
     db.grove.findMany({
       where: { tenantId },
       select: { treeCount: true, area: true },
@@ -45,6 +87,55 @@ export async function loader({ request }: Route.LoaderArgs) {
         recordedBy: { select: { firstName: true, lastName: true } },
       },
     }),
+    // Financial aggregates (year-scoped)
+    db.transaction.aggregate({
+      where: {
+        tenantId,
+        type: "EXPENSE",
+        date: { gte: yearStart, lt: yearEnd },
+      },
+      _sum: { amount: true },
+    }),
+    db.transaction.aggregate({
+      where: {
+        tenantId,
+        type: "INCOME",
+        date: { gte: yearStart, lt: yearEnd },
+      },
+      _sum: { amount: true },
+    }),
+    // Harvest aggregate (year-scoped) for cost calcs
+    db.harvest.aggregate({
+      where: { tenantId, date: { gte: yearStart, lt: yearEnd } },
+      _sum: { quantityKg: true, oilYieldLt: true },
+    }),
+    // Yearly harvests (all years)
+    db.$queryRaw<{ year: number; kg: number; oil: number }[]>`
+      SELECT EXTRACT(YEAR FROM date)::int AS year,
+             COALESCE(SUM("quantityKg"), 0) AS kg,
+             COALESCE(SUM("oilYieldLt"), 0) AS oil
+      FROM "Harvest"
+      WHERE "tenantId" = ${tenantId}
+      GROUP BY year
+      ORDER BY year
+    `,
+    // Expense transactions with category (year-scoped)
+    db.transaction.findMany({
+      where: {
+        tenantId,
+        type: "EXPENSE",
+        date: { gte: yearStart, lt: yearEnd },
+      },
+      select: { amount: true, category: { select: { name: true } } },
+    }),
+    // Available years
+    db.$queryRaw<{ year: number }[]>`
+      SELECT DISTINCT y AS year FROM (
+        SELECT EXTRACT(YEAR FROM date)::int AS y FROM "Harvest" WHERE "tenantId" = ${tenantId}
+        UNION
+        SELECT EXTRACT(YEAR FROM date)::int AS y FROM "Transaction" WHERE "tenantId" = ${tenantId}
+      ) sub ORDER BY year DESC
+    `,
   ]);
 
   const stats = {
@@ -57,12 +148,94 @@ export async function loader({ request }: Route.LoaderArgs) {
     avgOilYieldPct: harvestAgg._avg.oilYieldPct,
   };
 
-  return { user, stats, recentHarvests };
+  const expenses = expenseSum._sum.amount ?? 0;
+  const income = incomeSum._sum.amount ?? 0;
+  const yearKg = yearHarvestAgg._sum.quantityKg ?? 0;
+  const yearOil = yearHarvestAgg._sum.oilYieldLt ?? 0;
+
+  // Expense by category aggregation
+  const categoryMap = new Map<string, number>();
+  for (const tx of expenseTransactions) {
+    const name = tx.category.name;
+    categoryMap.set(name, (categoryMap.get(name) ?? 0) + tx.amount);
+  }
+
+  const expenseByCategory = Array.from(categoryMap.entries())
+    .map(([name, amount]) => ({ name, amount: Math.round(amount * 100) / 100 }))
+    .sort((a, b) => b.amount - a.amount);
+
+  // Available years
+  const availableYears = yearsRaw.map((r) => r.year);
+  if (!availableYears.includes(currentYear)) {
+    availableYears.push(currentYear);
+    availableYears.sort((a, b) => b - a);
+  }
+
+  return {
+    user,
+    stats,
+    recentHarvests,
+    currentYear,
+    availableYears,
+    financials: {
+      expenses,
+      income,
+      net: income - expenses,
+      costPerKg: yearKg > 0 ? expenses / yearKg : null,
+      costPerLiter: yearOil > 0 ? expenses / yearOil : null,
+    },
+    yearlyHarvests: yearlyHarvestsRaw.map((r) => ({
+      year: String(r.year),
+      kg: Number(r.kg),
+      oil: Number(r.oil),
+    })),
+    expenseByCategory,
+  };
 }
 
 export default function DashboardIndex({ loaderData }: Route.ComponentProps) {
-  const { user, stats, recentHarvests } = loaderData;
+  const {
+    user,
+    stats,
+    recentHarvests,
+    currentYear,
+    availableYears,
+    financials,
+    yearlyHarvests,
+    expenseByCategory,
+  } = loaderData;
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [cardGroup, setCardGroup] = useState("groves");
+
+  function handleYearChange(year: string) {
+    navigate(`/dashboard?year=${year}`);
+  }
+
+  const harvestChartConfig = {
+    kg: { label: t("quantityKg"), color: "#1b4019" },
+  } satisfies ChartConfig;
+
+  const categoryChartData = useMemo(
+    () =>
+      expenseByCategory.map((c, i) => ({
+        name: c.name,
+        amount: c.amount,
+        fill: CHART_COLORS[i % CHART_COLORS.length],
+      })),
+    [expenseByCategory],
+  );
+
+  const categoryChartConfig = useMemo(() => {
+    const config: ChartConfig = { amount: { label: t("amount") } };
+    expenseByCategory.forEach((c, i) => {
+      config[c.name] = {
+        label: c.name,
+        color: CHART_COLORS[i % CHART_COLORS.length],
+      };
+    });
+    return config;
+  }, [expenseByCategory, t]);
 
   return (
     <div className="flex flex-1 flex-col gap-6">
@@ -76,38 +249,233 @@ export default function DashboardIndex({ loaderData }: Route.ComponentProps) {
         </p>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <SummaryCard title={t("totalGroves")} value={stats.groveCount} />
-        <SummaryCard title={t("totalTrees")} value={stats.totalTrees} />
-        <SummaryCard
-          title={t("totalArea")}
-          value={`${stats.totalArea.toFixed(1)} m²`}
-        />
-        <SummaryCard
-          title={t("totalHarvestsCount")}
-          value={stats.harvestCount}
-        />
-      </div>
+      {/* Switchable Summary Cards */}
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">{t("year")}:</label>
+            <Select
+              value={String(currentYear)}
+              onValueChange={handleYearChange}
+            >
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {availableYears.map((y) => (
+                  <SelectItem key={y} value={String(y)}>
+                    {y}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>{" "}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">{t("viewMetrics")}:</label>
+            <Select value={cardGroup} onValueChange={setCardGroup}>
+              <SelectTrigger className="w-auto">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="groves">{t("groves")}</SelectItem>
+                <SelectItem value="harvests">{t("harvests")}</SelectItem>
+                <SelectItem value="finances">{t("finances")}</SelectItem>
+                <SelectItem value="efficiency">{t("efficiency")}</SelectItem>
+                <SelectItem value="charts">{t("charts")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {cardGroup === "groves" && (
+            <>
+              <SummaryCard title={t("totalGroves")} value={stats.groveCount} />
+              <SummaryCard title={t("totalTrees")} value={stats.totalTrees} />
+              <SummaryCard
+                title={t("totalArea")}
+                value={`${stats.totalArea.toFixed(1)} m²`}
+              />
+            </>
+          )}
+          {cardGroup === "harvests" && (
+            <>
+              <SummaryCard
+                title={t("totalHarvestsCount")}
+                value={stats.harvestCount}
+              />
+              <SummaryCard
+                title={t("totalHarvestKg")}
+                value={`${stats.totalQuantityKg.toFixed(1)} kg`}
+              />
+              <SummaryCard
+                title={t("totalOilYield")}
+                value={`${stats.totalOilYieldLt.toFixed(1)} L`}
+              />
+            </>
+          )}
+          {cardGroup === "finances" && (
+            <>
+              <SummaryCard
+                title={t("totalExpenses")}
+                value={`${financials.expenses.toFixed(2)} €`}
+              />
+              <SummaryCard
+                title={t("totalIncome")}
+                value={`${financials.income.toFixed(2)} €`}
+              />
+              <SummaryCard
+                title={t("netResult")}
+                value={`${financials.net >= 0 ? "+" : ""}${financials.net.toFixed(2)} €`}
+                valueClassName={
+                  financials.net >= 0 ? "text-green-700" : "text-red-700"
+                }
+              />
+            </>
+          )}
+          {cardGroup === "efficiency" && (
+            <>
+              <SummaryCard
+                title={t("avgOilYield")}
+                value={
+                  stats.avgOilYieldPct != null
+                    ? `${stats.avgOilYieldPct.toFixed(1)}%`
+                    : "—"
+                }
+              />
+              <SummaryCard
+                title={t("costPerKg")}
+                value={
+                  financials.costPerKg != null
+                    ? `${financials.costPerKg.toFixed(2)} €`
+                    : "—"
+                }
+              />
+              <SummaryCard
+                title={t("costPerLiter")}
+                value={
+                  financials.costPerLiter != null
+                    ? `${financials.costPerLiter.toFixed(2)} €`
+                    : "—"
+                }
+              />
+            </>
+          )}
+          {cardGroup === "charts" && (
+            <div className="col-span-full grid gap-4 sm:grid-cols-2">
+              {/* Year-over-Year Harvest */}
+              <Card className="bg-cream">
+                <CardHeader className="pb-0">
+                  <CardTitle>{t("harvestByYear")}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {yearlyHarvests.length > 0 ? (
+                    <ChartContainer
+                      config={harvestChartConfig}
+                      className="aspect-auto h-62.5 w-full"
+                    >
+                      <BarChart
+                        data={yearlyHarvests}
+                        accessibilityLayer
+                        margin={{ left: 0, right: 0 }}
+                      >
+                        <CartesianGrid vertical={false} />
+                        <XAxis
+                          dataKey="year"
+                          tickLine={false}
+                          axisLine={false}
+                          tick={{ fontSize: 12 }}
+                        />
+                        <YAxis
+                          tickLine={false}
+                          axisLine={false}
+                          width={40}
+                          tick={{ fontSize: 12 }}
+                        />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="kg" fill="var(--color-kg)" radius={4} />
+                      </BarChart>
+                    </ChartContainer>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-4">
+                      {t("noData")}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <SummaryCard
-          title={t("totalHarvestKg")}
-          value={`${stats.totalQuantityKg.toFixed(1)} kg`}
-        />
-        <SummaryCard
-          title={t("totalOilYield")}
-          value={`${stats.totalOilYieldLt.toFixed(1)} L`}
-        />
-        <SummaryCard
-          title={t("avgOilYield")}
-          value={
-            stats.avgOilYieldPct != null
-              ? `${stats.avgOilYieldPct.toFixed(1)}%`
-              : "—"
-          }
-        />
+              {/* Expense by Category */}
+              <Card className="bg-cream">
+                <CardHeader className="pb-0">
+                  <CardTitle>{t("expenseByCategory")}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 pb-0">
+                  {categoryChartData.length > 0 ? (
+                    <ChartContainer
+                      config={categoryChartConfig}
+                      className="mx-auto aspect-square max-h-62.5"
+                    >
+                      <PieChart>
+                        <ChartTooltip
+                          cursor={false}
+                          content={<ChartTooltipContent hideLabel />}
+                        />
+                        <Pie
+                          data={categoryChartData}
+                          dataKey="amount"
+                          nameKey="name"
+                          innerRadius={60}
+                          strokeWidth={5}
+                        >
+                          <Label
+                            content={({ viewBox }) => {
+                              if (
+                                viewBox &&
+                                "cx" in viewBox &&
+                                "cy" in viewBox
+                              ) {
+                                const total = expenseByCategory.reduce(
+                                  (s, c) => s + c.amount,
+                                  0,
+                                );
+                                return (
+                                  <text
+                                    x={viewBox.cx}
+                                    y={viewBox.cy}
+                                    textAnchor="middle"
+                                    dominantBaseline="middle"
+                                  >
+                                    <tspan
+                                      x={viewBox.cx}
+                                      y={viewBox.cy}
+                                      className="fill-foreground text-2xl font-bold"
+                                    >
+                                      {total.toFixed(0)}
+                                    </tspan>
+                                    <tspan
+                                      x={viewBox.cx}
+                                      y={(viewBox.cy || 0) + 24}
+                                      className="fill-muted-foreground"
+                                    >
+                                      {"€"}
+                                    </tspan>
+                                  </text>
+                                );
+                              }
+                            }}
+                          />
+                        </Pie>
+                      </PieChart>
+                    </ChartContainer>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-4">
+                      {t("noData")}
+                    </p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Recent Harvests */}
