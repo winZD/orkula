@@ -50,7 +50,7 @@ Session-based auth in `app/lib/auth.server.ts`. Tokens stored in DB with 30-day 
 
 ### Form Validation
 
-Forms use `react-hook-form` with `@hookform/resolvers/zod`. Zod schemas are defined in `app/lib/validations.ts` and reused for both client-side validation and server-side action parsing. When using `useForm` with Zod schemas that contain `.transform()` (like `numericField`), do **not** pass the output type as a generic parameter — omit the type parameter and let inference handle it.
+Forms use `react-hook-form` with `@hookform/resolvers/zod`. Zod schemas are defined in `app/lib/validations.ts` and reused for both client-side validation and server-side action parsing. The project uses **Zod v4** (`zod@4.x`), not v3 — import from `"zod"` as usual but be aware of v4 API differences. When using `useForm` with Zod schemas that contain `.transform()` (like `numericField`), do **not** pass the output type as a generic parameter — omit the type parameter and let inference handle it. Date formatting uses `date-fns`.
 
 ### Internationalization (i18n)
 
@@ -78,6 +78,7 @@ CRUD routes follow a consistent naming convention:
 - Create: `dashboard.<resource>.new.tsx`
 - Edit: `dashboard.<resource>.$<id>.edit.tsx`
 - Special: `dashboard.<resource>.$<id>.<action>.tsx` (e.g., allocate route for finances)
+- Settings: `dashboard.settings.tsx` (includes user management — users are created/edited via `dashboard.users.new.tsx` and `dashboard.users.$userId.edit.tsx`)
 
 Delete operations use an `AlertDialog` confirmation and are handled as actions on the list page (not separate routes), using `fetcher.submit({ intent: "delete<Resource>", <resource>Id: id }, { method: "post" })`.
 
