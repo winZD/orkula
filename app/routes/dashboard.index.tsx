@@ -63,7 +63,7 @@ export async function loader({ request }: Route.LoaderArgs) {
     recentHarvests,
     expenseSum,
     incomeSum,
-    yearHarvestAgg,
+    yearHarvest,
     yearlyHarvestsRaw,
     expenseTransactions,
     yearsRaw,
@@ -104,10 +104,10 @@ export async function loader({ request }: Route.LoaderArgs) {
       },
       _sum: { amount: true },
     }),
-    // Harvest aggregate (year-scoped) for cost calcs
-    db.harvest.aggregate({
+    // Year harvest (one harvest per year)
+    db.harvest.findFirst({
       where: { tenantId, date: { gte: yearStart, lt: yearEnd } },
-      _sum: { quantityKg: true, oilYieldLt: true },
+      select: { quantityKg: true, oilYieldLt: true, oilYieldPct: true },
     }),
     // Yearly harvests (all years)
     db.$queryRaw<{ year: number; kg: number; oil: number }[]>`
@@ -150,8 +150,8 @@ export async function loader({ request }: Route.LoaderArgs) {
 
   const expenses = expenseSum._sum.amount ?? 0;
   const income = incomeSum._sum.amount ?? 0;
-  const yearKg = yearHarvestAgg._sum.quantityKg ?? 0;
-  const yearOil = yearHarvestAgg._sum.oilYieldLt ?? 0;
+  const yearKg = yearHarvest?.quantityKg ?? 0;
+  const yearOil = yearHarvest?.oilYieldLt ?? 0;
 
   // Expense by category aggregation
   const categoryMap = new Map<string, number>();
@@ -183,6 +183,7 @@ export async function loader({ request }: Route.LoaderArgs) {
       net: income - expenses,
       costPerKg: yearKg > 0 ? expenses / yearKg : null,
       costPerLiter: yearOil > 0 ? expenses / yearOil : null,
+      yearOilYieldPct: yearHarvest?.oilYieldPct ?? null,
     },
     yearlyHarvests: yearlyHarvestsRaw.map((r) => ({
       year: String(r.year),
@@ -252,24 +253,26 @@ export default function DashboardIndex({ loaderData }: Route.ComponentProps) {
       {/* Switchable Summary Cards */}
       <div className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center gap-2">
-            <label className="text-sm font-medium">{t("year")}:</label>
-            <Select
-              value={String(currentYear)}
-              onValueChange={handleYearChange}
-            >
-              <SelectTrigger className="w-28">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {availableYears.map((y) => (
-                  <SelectItem key={y} value={String(y)}>
-                    {y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>{" "}
+          {cardGroup !== "groves" && cardGroup !== "harvests" && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium">{t("year")}:</label>
+              <Select
+                value={String(currentYear)}
+                onValueChange={handleYearChange}
+              >
+                <SelectTrigger className="w-28">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableYears.map((y) => (
+                    <SelectItem key={y} value={String(y)}>
+                      {y}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <label className="text-sm font-medium">{t("viewMetrics")}:</label>
             <Select value={cardGroup} onValueChange={setCardGroup}>
@@ -335,10 +338,10 @@ export default function DashboardIndex({ loaderData }: Route.ComponentProps) {
           {cardGroup === "efficiency" && (
             <>
               <SummaryCard
-                title={t("avgOilYield")}
+                title={t("oilYieldPct")}
                 value={
-                  stats.avgOilYieldPct != null
-                    ? `${stats.avgOilYieldPct.toFixed(1)}%`
+                  financials.yearOilYieldPct != null
+                    ? `${financials.yearOilYieldPct.toFixed(1)}%`
                     : "—"
                 }
               />
@@ -358,6 +361,16 @@ export default function DashboardIndex({ loaderData }: Route.ComponentProps) {
                     : "—"
                 }
               />
+              <div className="col-span-full">
+                <p className="text-sm text-muted-foreground">
+                  {t("avgOilYield")}:{" "}
+                  <span className="font-semibold text-foreground">
+                    {stats.avgOilYieldPct != null
+                      ? `${stats.avgOilYieldPct.toFixed(1)}%`
+                      : "—"}
+                  </span>
+                </p>
+              </div>
             </>
           )}
           {cardGroup === "charts" && (
