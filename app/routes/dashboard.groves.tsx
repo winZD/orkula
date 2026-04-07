@@ -288,14 +288,13 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
         </Button>
       </div>
 
-      {(areaChartData.length > 0 || varietyChartData.length > 0) && (
-        <div className="grid gap-4 sm:grid-cols-2">
-          {areaChartData.length > 0 && (
-            <Card className="bg-cream">
-              <CardHeader className="pb-0">
-                <CardTitle>{t("areaDistribution")}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 pb-0">
+      <div className="grid gap-4 sm:grid-cols-2">
+          <Card className="bg-cream">
+            <CardHeader className="pb-0">
+              <CardTitle>{t("areaDistribution")}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 pb-0">
+              {areaChartData.length > 0 ? (
                 <ChartContainer
                   config={areaChartConfig}
                   className="mx-auto aspect-square max-h-62.5"
@@ -344,16 +343,20 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                     </Pie>
                   </PieChart>
                 </ChartContainer>
-              </CardContent>
-            </Card>
-          )}
+              ) : (
+                <p className="text-center text-muted-foreground py-4">
+                  {t("noData")}
+                </p>
+              )}
+            </CardContent>
+          </Card>
 
-          {varietyChartData.length > 0 && (
-            <Card className="bg-cream">
-              <CardHeader className="pb-0">
-                <CardTitle>{t("varietyDistribution")}</CardTitle>
-              </CardHeader>
-              <CardContent className="flex-1 pb-0">
+          <Card className="bg-cream">
+            <CardHeader className="pb-0">
+              <CardTitle>{t("varietyDistribution")}</CardTitle>
+            </CardHeader>
+            <CardContent className="flex-1 pb-0">
+              {varietyChartData.length > 0 ? (
                 <ChartContainer
                   config={varietyChartConfig}
                   className="mx-auto aspect-square max-h-62.5"
@@ -402,11 +405,14 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                     </Pie>
                   </PieChart>
                 </ChartContainer>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
+              ) : (
+                <p className="text-center text-muted-foreground py-4">
+                  {t("noData")}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+      </div>
 
       {allGroves.length === 0 ? (
         <p className="text-center text-muted-foreground py-8">
