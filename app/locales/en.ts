@@ -75,6 +75,7 @@ export default {
   noGroves: "No groves found.",
   namePlaceholder: "e.g. Northern grove",
   locationPlaceholder: "e.g. Istria",
+  addVarietyPlaceholder: "Add variety...",
 
   // Harvests
   harvests: "Harvests",

@@ -38,7 +38,7 @@ Path alias: `~/*` maps to `./app/*`.
 
 PostgreSQL via Prisma ORM (`@prisma/adapter-pg`). Generated client is imported from `generated/prisma/client` (not `@prisma/client`). Requires `DATABASE_URL` in `.env`.
 
-Core models: Tenant → Users, Groves, Harvests, Categories, Transactions. Users have roles (OWNER, ADMIN, MEMBER). Groves track olive varieties via GroveVariety join model (`OliveVariety` enum: OBLICA, LEVANTINKA, LASTOVKA, BUZA, DROBNICA, LECCINO, FRANTOIO, PENDOLINO, CORATINA, ARBEQUINA, PICUAL, KORONEIKI, OTHER). Harvests track method via `HarvestMethod` enum (HAND, RAKE, MECHANICAL_SHAKER, VIBRATOR, NET). Transactions (EXPENSE/INCOME) belong to a Category (scoped per tenant and type). Expense transactions can be allocated across groves via GroveApplication join model (tracks quantity and calculated cost per grove). Transactions have composite indexes on `(tenantId, date)` and `(tenantId, type)`.
+Core models: Tenant → Users, Groves, Harvests, Categories, Transactions. Users have roles (OWNER, ADMIN, MEMBER). Groves track olive varieties via GroveVariety join model (free-text `variety` string — users can add any variety name). Harvests track method via `HarvestMethod` enum (HAND, RAKE, MECHANICAL_SHAKER, VIBRATOR, NET). Transactions (EXPENSE/INCOME) belong to a Category (scoped per tenant and type). Expense transactions can be allocated across groves via GroveApplication join model (tracks quantity and calculated cost per grove). Transactions have composite indexes on `(tenantId, date)` and `(tenantId, type)`.
 
 ### Multi-Tenancy
 

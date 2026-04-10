@@ -188,7 +188,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
   const varietyChartData = useMemo(
     () =>
       varietyCounts.map((v, i) => ({
-        variety: v.variety.charAt(0) + v.variety.slice(1).toLowerCase(),
+        variety: v.variety,
         trees: v.trees,
         fill: CHART_COLORS[i % CHART_COLORS.length],
       })),
@@ -198,7 +198,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
   const varietyChartConfig = useMemo(() => {
     const config: ChartConfig = { trees: { label: t("trees") } };
     varietyCounts.forEach((v, i) => {
-      const label = v.variety.charAt(0) + v.variety.slice(1).toLowerCase();
+      const label = v.variety;
       config[label] = {
         label,
         color: CHART_COLORS[i % CHART_COLORS.length],
@@ -504,8 +504,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                         ? grove.varieties
                             .map(
                               (v) =>
-                                v.variety.charAt(0) +
-                                v.variety.slice(1).toLowerCase(),
+                                v.variety,
                             )
                             .join(", ")
                         : "—"}
@@ -579,8 +578,7 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
                         ? grove.varieties
                             .map(
                               (v) =>
-                                v.variety.charAt(0) +
-                                v.variety.slice(1).toLowerCase(),
+                                v.variety,
                             )
                             .join(", ")
                         : "—"}

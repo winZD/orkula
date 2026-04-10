@@ -24,8 +24,7 @@ export const groveSchema = z.object({
     .pipe(z.number().positive("validationMustBePositive"))
     .optional(),
   treeCount: numericField
-    .pipe(z.number().int().positive("validationMustBePositive"))
-    .optional(),
+    .pipe(z.number().int().positive("validationMustBePositive")),
 });
 
 export const harvestSchema = z.object({
@@ -54,7 +53,11 @@ export const editUserSchema = z.object({
   firstName: z.string().min(1, "validationFirstNameRequired"),
   lastName: z.string().min(1, "validationLastNameRequired"),
   email: z.email("validationInvalidEmail"),
-  password: z.string().min(6, "validationPasswordMin").optional().or(z.literal("")),
+  password: z
+    .string()
+    .min(6, "validationPasswordMin")
+    .optional()
+    .or(z.literal("")),
   role: z.enum(["ADMIN", "MEMBER"], { message: "validationInvalidRole" }),
 });
 

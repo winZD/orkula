@@ -1,8 +1,9 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { data, redirect, useNavigate, useFetcher, Link } from "react-router";
 import { useTranslation } from "react-i18next";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Plus, X } from "lucide-react";
 import { db } from "~/db/prisma";
 import { getSessionUser } from "~/lib/auth.server";
 import { groveSchema } from "~/lib/validations";
@@ -20,11 +21,19 @@ export async function loader({ request, params }: Route.LoaderArgs) {
 
   const grove = await db.grove.findFirst({
     where: { id: params.groveId, tenantId: user.tenantId },
+    include: { varieties: true },
   });
 
   if (!grove) throw redirect("/dashboard/groves");
 
-  return { grove };
+  const existingVarieties = await db.groveVariety.findMany({
+    where: { grove: { tenantId: user.tenantId } },
+    select: { variety: true },
+    distinct: ["variety"],
+    orderBy: { variety: "asc" },
+  });
+
+  return { grove, existingVarieties };
 }
 
 export async function action({ request, params }: Route.ActionArgs) {
@@ -47,25 +56,61 @@ export async function action({ request, params }: Route.ActionArgs) {
     return data({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
-  await db.grove.update({
-    where: { id: grove.id },
-    data: {
-      name: parsed.data.name,
-      location: parsed.data.location || null,
-      area: parsed.data.area ?? null,
-      treeCount: parsed.data.treeCount ?? null,
-    },
-  });
+  const varietyEntries: { variety: string; treeCount?: number }[] = [];
+  const varietyNames = formData.getAll("varietyName") as string[];
+  const varietyTreeCounts = formData.getAll("varietyTreeCount") as string[];
+
+  for (let i = 0; i < varietyNames.length; i++) {
+    const name = varietyNames[i].trim();
+    if (!name) continue;
+    const tc = varietyTreeCounts[i]
+      ? parseInt(varietyTreeCounts[i], 10)
+      : undefined;
+    varietyEntries.push({
+      variety: name,
+      treeCount: tc && !isNaN(tc) ? tc : undefined,
+    });
+  }
+
+  await db.$transaction([
+    db.grove.update({
+      where: { id: grove.id },
+      data: {
+        name: parsed.data.name,
+        location: parsed.data.location || null,
+        area: parsed.data.area ?? null,
+        treeCount: parsed.data.treeCount ?? null,
+      },
+    }),
+    db.groveVariety.deleteMany({ where: { groveId: grove.id } }),
+    db.groveVariety.createMany({
+      data: varietyEntries.map((v) => ({
+        groveId: grove.id,
+        variety: v.variety,
+        treeCount: v.treeCount ?? null,
+      })),
+    }),
+  ]);
 
   return redirect("/dashboard/groves");
 }
 
+type VarietyEntry = { variety: string; treeCount: string };
+
 export default function EditGrove({ loaderData }: Route.ComponentProps) {
-  const { grove } = loaderData;
+  const { grove, existingVarieties } = loaderData;
   const fetcher = useFetcher<typeof action>();
   const navigate = useNavigate();
   const isSubmitting = fetcher.state === "submitting";
   const { t } = useTranslation();
+
+  const [varieties, setVarieties] = useState<VarietyEntry[]>(
+    grove.varieties.map((v) => ({
+      variety: v.variety,
+      treeCount: v.treeCount?.toString() ?? "",
+    })),
+  );
+  const [newVariety, setNewVariety] = useState("");
 
   const {
     register,
@@ -82,10 +127,46 @@ export default function EditGrove({ loaderData }: Route.ComponentProps) {
     },
   });
 
+  function addVariety(name: string) {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (
+      varieties.some((v) => v.variety.toLowerCase() === trimmed.toLowerCase())
+    )
+      return;
+    setVarieties((prev) => [
+      ...prev,
+      { variety: trimmed.toUpperCase(), treeCount: "" },
+    ]);
+    setNewVariety("");
+  }
+
+  function removeVariety(index: number) {
+    setVarieties((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function updateTreeCount(index: number, value: string) {
+    setVarieties((prev) =>
+      prev.map((v, i) => (i === index ? { ...v, treeCount: value } : v)),
+    );
+  }
+
+  const filteredVarieties = existingVarieties.filter(
+    (s) =>
+      newVariety.length > 0 &&
+      s.variety.toLowerCase().includes(newVariety.toLowerCase()) &&
+      !varieties.some(
+        (v) => v.variety.toLowerCase() === s.variety.toLowerCase(),
+      ),
+  );
+
   return (
     <div className="flex flex-1 flex-col gap-6">
       <div>
-        <Link to="/dashboard/groves" className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-forest mb-2">
+        <Link
+          to="/dashboard/groves"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-forest mb-2"
+        >
           <ArrowLeft className="h-4 w-4" />
           {t("back")}
         </Link>
@@ -96,9 +177,17 @@ export default function EditGrove({ loaderData }: Route.ComponentProps) {
       <form
         method="post"
         className="flex flex-col gap-4 max-w-2xl"
-        onSubmit={handleSubmit((formData) =>
-          fetcher.submit(formData, { method: "post" }),
-        )}
+        onSubmit={handleSubmit((formData) => {
+          const fd = new FormData();
+          Object.entries(formData).forEach(([k, v]) => {
+            if (v !== undefined && v !== null) fd.append(k, String(v));
+          });
+          varieties.forEach((v) => {
+            fd.append("varietyName", v.variety);
+            fd.append("varietyTreeCount", v.treeCount);
+          });
+          fetcher.submit(fd, { method: "post" });
+        })}
       >
         {fetcher.data && "error" in fetcher.data && (
           <p className="text-sm text-destructive">{t(fetcher.data.error)}</p>
@@ -169,6 +258,74 @@ export default function EditGrove({ loaderData }: Route.ComponentProps) {
               <p className="text-xs text-destructive">
                 {t(errors.treeCount.message as string)}
               </p>
+            )}
+          </div>
+        </div>
+
+        {/* Varieties section */}
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium">{t("varieties")}</label>
+
+          {varieties.map((v, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <span className="text-sm flex-1 truncate">{v.variety}</span>
+              <Input
+                type="number"
+                placeholder={t("trees")}
+                className="w-24 cursor-text"
+                value={v.treeCount}
+                min={1}
+                onChange={(e) => updateTreeCount(i, e.target.value)}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+                onClick={() => removeVariety(i)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+
+          <div className="relative">
+            <div className="flex gap-2">
+              <Input
+                className="cursor-text"
+                placeholder={t("addVarietyPlaceholder")}
+                value={newVariety}
+                onChange={(e) => setNewVariety(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addVariety(newVariety);
+                  }
+                }}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                onClick={() => addVariety(newVariety)}
+              >
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            {filteredVarieties.length > 0 && (
+              <div className="absolute z-10 mt-1 w-full bg-cream border rounded-md shadow-md max-h-40 overflow-y-auto">
+                {filteredVarieties.map((s) => (
+                  <button
+                    key={s.variety}
+                    type="button"
+                    className="w-full text-left px-3 py-2 text-sm hover:bg-forest/10"
+                    onClick={() => addVariety(s.variety)}
+                  >
+                    {s.variety}
+                  </button>
+                ))}
+              </div>
             )}
           </div>
         </div>

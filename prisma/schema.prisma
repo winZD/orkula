@@ -66,10 +66,10 @@ model Grove {
 }
 
 model GroveVariety {
-  id        String       @id @default(cuid())
-  variety   OliveVariety
+  id        String   @id @default(cuid())
+  variety   String
   treeCount Int?
-  createdAt DateTime     @default(now())
+  createdAt DateTime @default(now())
 
   groveId String
   grove   Grove  @relation(fields: [groveId], references: [id], onDelete: Cascade)
@@ -102,22 +102,6 @@ enum Role {
   OWNER
   ADMIN
   MEMBER
-}
-
-enum OliveVariety {
-  OBLICA
-  LEVANTINKA
-  LASTOVKA
-  BUZA
-  DROBNICA
-  LECCINO
-  FRANTOIO
-  PENDOLINO
-  CORATINA
-  ARBEQUINA
-  PICUAL
-  KORONEIKI
-  OTHER
 }
 
 enum HarvestMethod {

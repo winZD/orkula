@@ -75,6 +75,7 @@ export default {
   noGroves: "Nema maslinika.",
   namePlaceholder: "npr. Sjeverni maslinik",
   locationPlaceholder: "npr. Istra",
+  addVarietyPlaceholder: "Dodaj sortu...",
 
   // Harvests
   harvests: "Berbe",

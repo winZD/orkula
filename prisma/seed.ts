@@ -41,6 +41,16 @@ async function main() {
     },
   });
 
+  // Grove varieties
+  await db.groveVariety.createMany({
+    data: [
+      { groveId: grove1.id, variety: "Oblica", treeCount: 80 },
+      { groveId: grove1.id, variety: "Leccino", treeCount: 40 },
+      { groveId: grove2.id, variety: "Oblica", treeCount: 50 },
+      { groveId: grove2.id, variety: "Lastovka", treeCount: 35 },
+    ],
+  });
+
   // Categories
   const catFertilizer = await db.category.create({
     data: { name: "Gnojivo", type: "EXPENSE", tenantId: tenant.id },
