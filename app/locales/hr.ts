@@ -119,6 +119,7 @@ export default {
   validationNameRequired: "Naziv je obavezan",
   validationMustBePositive: "Mora biti pozitivan broj",
   validationGroveRequired: "Maslinik je obavezan",
+  validationVarietyRequired: "Dodajte barem jednu sortu",
   validationDateRequired: "Datum je obavezan",
   validationInvalidLanguage: "Nevažeći jezik",
 

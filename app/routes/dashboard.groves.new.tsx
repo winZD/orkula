@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { data, redirect, useNavigate, useFetcher, Link } from "react-router";
 import { useTranslation } from "react-i18next";
@@ -35,27 +35,25 @@ export async function action({ request }: Route.ActionArgs) {
 
   const formData = await request.formData();
   const raw = Object.fromEntries(formData);
-  const parsed = groveSchema.safeParse(raw);
+  const varietyNames = formData.getAll("varietyName") as string[];
+  const varietyTreeCounts = formData.getAll("varietyTreeCount") as string[];
+  const varieties = varietyNames
+    .map((name, i) => ({
+      variety: name.trim(),
+      treeCount: varietyTreeCounts[i] ?? "",
+    }))
+    .filter((v) => v.variety);
+
+  const parsed = groveSchema.safeParse({ ...raw, varieties });
 
   if (!parsed.success) {
     return data({ error: parsed.error.issues[0].message }, { status: 400 });
   }
 
-  const varietyEntries: { variety: string; treeCount?: number }[] = [];
-  const varietyNames = formData.getAll("varietyName") as string[];
-  const varietyTreeCounts = formData.getAll("varietyTreeCount") as string[];
-
-  for (let i = 0; i < varietyNames.length; i++) {
-    const name = varietyNames[i].trim();
-    if (!name) continue;
-    const tc = varietyTreeCounts[i]
-      ? parseInt(varietyTreeCounts[i], 10)
-      : undefined;
-    varietyEntries.push({
-      variety: name,
-      treeCount: tc && !isNaN(tc) ? tc : undefined,
-    });
-  }
+  const varietyEntries = parsed.data.varieties.map((v) => ({
+    variety: v.variety,
+    treeCount: v.treeCount,
+  }));
 
   await db.grove.create({
     data: {
@@ -76,8 +74,6 @@ export async function action({ request }: Route.ActionArgs) {
   return redirect("/dashboard/groves");
 }
 
-type VarietyEntry = { variety: string; treeCount: string };
-
 export default function NewGrove({ loaderData }: Route.ComponentProps) {
   const { existingVarieties } = loaderData;
   const fetcher = useFetcher<typeof action>();
@@ -85,49 +81,44 @@ export default function NewGrove({ loaderData }: Route.ComponentProps) {
   const isSubmitting = fetcher.state === "submitting";
   const { t } = useTranslation();
 
-  const [varieties, setVarieties] = useState<VarietyEntry[]>([]);
   const [newVariety, setNewVariety] = useState("");
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(groveSchema),
     mode: "onBlur",
+    defaultValues: {
+      name: "",
+      location: "",
+      area: undefined,
+      treeCount: undefined,
+      varieties: [],
+    },
+  });
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "varieties",
   });
 
   function addVariety(name: string) {
     const trimmed = name.trim();
     if (!trimmed) return;
-    if (
-      varieties.some((v) => v.variety.toLowerCase() === trimmed.toLowerCase())
-    )
+    if (fields.some((v) => v.variety.toLowerCase() === trimmed.toLowerCase()))
       return;
-    setVarieties((prev) => [
-      ...prev,
-      { variety: trimmed.toUpperCase(), treeCount: "" },
-    ]);
+    append({ variety: trimmed.toUpperCase(), treeCount: "" });
     setNewVariety("");
-  }
-
-  function removeVariety(index: number) {
-    setVarieties((prev) => prev.filter((_, i) => i !== index));
-  }
-
-  function updateTreeCount(index: number, value: string) {
-    setVarieties((prev) =>
-      prev.map((v, i) => (i === index ? { ...v, treeCount: value } : v)),
-    );
   }
 
   const filteredVarieties = existingVarieties.filter(
     (s) =>
       newVariety.length > 0 &&
       s.variety.toLowerCase().includes(newVariety.toLowerCase()) &&
-      !varieties.some(
-        (v) => v.variety.toLowerCase() === s.variety.toLowerCase(),
-      ),
+      !fields.some((v) => v.variety.toLowerCase() === s.variety.toLowerCase()),
   );
 
   return (
@@ -147,14 +138,14 @@ export default function NewGrove({ loaderData }: Route.ComponentProps) {
       <form
         method="post"
         className="flex flex-col gap-4 max-w-2xl"
-        onSubmit={handleSubmit((formData) => {
+        onSubmit={handleSubmit(({ varieties: formVarieties, ...rest }) => {
           const fd = new FormData();
-          Object.entries(formData).forEach(([k, v]) => {
+          Object.entries(rest).forEach(([k, v]) => {
             if (v !== undefined && v !== null) fd.append(k, String(v));
           });
-          varieties.forEach((v) => {
+          formVarieties.forEach((v) => {
             fd.append("varietyName", v.variety);
-            fd.append("varietyTreeCount", v.treeCount);
+            fd.append("varietyTreeCount", String(v.treeCount));
           });
           fetcher.submit(fd, { method: "post" });
         })}
@@ -234,25 +225,32 @@ export default function NewGrove({ loaderData }: Route.ComponentProps) {
 
         {/* Varieties section */}
         <div className="flex flex-col gap-2">
-          <label className="text-sm font-medium">{t("varieties")}</label>
+          <label className="text-sm font-medium">{t("varieties")} *</label>
 
-          {varieties.map((v, i) => (
-            <div key={i} className="flex items-center gap-2">
-              <span className="text-sm flex-1 truncate">{v.variety}</span>
-              <Input
-                type="number"
-                placeholder={t("trees")}
-                className="w-24 cursor-text"
-                value={v.treeCount}
-                min={1}
-                onChange={(e) => updateTreeCount(i, e.target.value)}
-              />
+          {fields.map((v, i) => (
+            <div key={v.id} className="flex items-start gap-2">
+              <span className="text-sm flex-1 truncate pt-2">{v.variety}</span>
+              <div className="flex flex-col gap-1 w-24">
+                <Input
+                  type="number"
+                  placeholder={t("trees")}
+                  className="cursor-text"
+                  aria-invalid={!!errors.varieties?.[i]?.treeCount}
+                  min={1}
+                  {...register(`varieties.${i}.treeCount`)}
+                />
+                {errors.varieties?.[i]?.treeCount?.message && (
+                  <p className="text-xs text-destructive">
+                    {t(errors.varieties[i]!.treeCount!.message as string)}
+                  </p>
+                )}
+              </div>
               <Button
                 type="button"
                 variant="outline"
                 size="icon"
                 className="h-8 w-8 shrink-0"
-                onClick={() => removeVariety(i)}
+                onClick={() => remove(i)}
               >
                 <X className="h-4 w-4" />
               </Button>
@@ -298,6 +296,11 @@ export default function NewGrove({ loaderData }: Route.ComponentProps) {
               </div>
             )}
           </div>
+          {errors.varieties?.message && (
+            <p className="text-xs text-destructive">
+              {t(errors.varieties.message)}
+            </p>
+          )}
         </div>
 
         <div className="flex flex-col-reverse sm:flex-row gap-3 pt-2">

@@ -119,6 +119,7 @@ export default {
   validationNameRequired: "Name is required",
   validationMustBePositive: "Must be a positive number",
   validationGroveRequired: "Grove is required",
+  validationVarietyRequired: "Add at least one variety",
   validationDateRequired: "Date is required",
   validationInvalidLanguage: "Invalid language",
 
