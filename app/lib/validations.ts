@@ -25,6 +25,16 @@ export const groveSchema = z.object({
     .optional(),
   treeCount: numericField
     .pipe(z.number().int().positive("validationMustBePositive")),
+  varieties: z
+    .array(
+      z.object({
+        variety: z.string().min(1, "validationVarietyRequired"),
+        treeCount: numericField.pipe(
+          z.number().int().positive("validationMustBePositive"),
+        ),
+      }),
+    )
+    .min(1, "validationVarietyRequired"),
 });
 
 export const harvestSchema = z.object({
