@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import { useTranslation } from "react-i18next";
+import { CalendarClock } from "lucide-react";
 import {
   Bar,
   BarChart,
@@ -15,6 +16,12 @@ import { db } from "~/db/prisma";
 import { CHART_COLORS } from "~/lib/utils";
 import { getSessionUser } from "~/lib/auth.server";
 import type { Route } from "./+types/dashboard.index";
+import {
+  Alert,
+  AlertAction,
+  AlertDescription,
+  AlertTitle,
+} from "~/components/ui/alert";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { SummaryCard } from "~/components/summary-card";
@@ -171,12 +178,33 @@ export async function loader({ request }: Route.LoaderArgs) {
     availableYears.sort((a, b) => b - a);
   }
 
+  // Stale-harvest reminder: show banner if we're in the harvest window (Oct–Nov),
+  // past the Nov 15 cutoff, and no harvest has been recorded for the current year.
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const inHarvestWindow = currentMonth === 9 || currentMonth === 10;
+  const cutoff = new Date(today.getFullYear(), 10, 15);
+  let staleHarvestYear: number | null = null;
+  if (inHarvestWindow && today >= cutoff) {
+    const thisYearHarvestCount = await db.harvest.count({
+      where: {
+        tenantId,
+        date: {
+          gte: new Date(today.getFullYear(), 0, 1),
+          lt: new Date(today.getFullYear() + 1, 0, 1),
+        },
+      },
+    });
+    if (thisYearHarvestCount === 0) staleHarvestYear = today.getFullYear();
+  }
+
   return {
     user,
     stats,
     recentHarvests,
     currentYear,
     availableYears,
+    staleHarvestYear,
     financials: {
       expenses,
       income,
@@ -201,6 +229,7 @@ export default function DashboardIndex({ loaderData }: Route.ComponentProps) {
     recentHarvests,
     currentYear,
     availableYears,
+    staleHarvestYear,
     financials,
     yearlyHarvests,
     expenseByCategory,
@@ -240,6 +269,21 @@ export default function DashboardIndex({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="flex flex-1 flex-col gap-6">
+      {staleHarvestYear && (
+        <Alert className="bg-red-100  border-red-300">
+          <CalendarClock />
+          <AlertTitle>
+            {t("staleHarvestTitle", { year: staleHarvestYear })}
+          </AlertTitle>
+          <AlertDescription>{t("staleHarvestDescription")}</AlertDescription>
+          <AlertAction>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/dashboard/harvests/new">{t("recordHarvest")}</Link>
+            </Button>
+          </AlertAction>
+        </Alert>
+      )}
+
       {/* Welcome */}
       <div>
         <h2 className="text-2xl font-bold">

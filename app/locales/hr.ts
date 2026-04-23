@@ -69,7 +69,8 @@ export default {
   editGroveDescription: "Uredite podatke maslinika.",
   deleteGrove: "Obriši maslinik",
   deleteGroveConfirmTitle: "Jeste li sigurni?",
-  deleteGroveConfirmDescription: "Ova radnja se ne može poništiti. Maslinik i svi povezani podaci bit će trajno obrisani.",
+  deleteGroveConfirmDescription:
+    "Ova radnja se ne može poništiti. Maslinik i svi povezani podaci bit će trajno obrisani.",
   areaDistribution: "Raspodjela površine",
   varietyDistribution: "Raspodjela sorti",
   noGroves: "Nema maslinika.",
@@ -95,13 +96,18 @@ export default {
   editHarvestDescription: "Uredite podatke berbe.",
   deleteHarvest: "Obriši berbu",
   deleteHarvestConfirmTitle: "Jeste li sigurni?",
-  deleteHarvestConfirmDescription: "Ova radnja se ne može poništiti. Zapis o berbi bit će trajno obrisan.",
+  deleteHarvestConfirmDescription:
+    "Ova radnja se ne može poništiti. Zapis o berbi bit će trajno obrisan.",
   harvestNotFound: "Berba nije pronađena",
   harvestsByGrove: "Berbe po masliniku",
   noHarvests: "Nema berbi.",
   selectGrove: "Odaberite maslinik",
   notesPlaceholder: "Neobavezne bilješke o berbi",
   groveNotFound: "Maslinik nije pronađen",
+  staleHarvestTitle: "Niste još zabilježili berbu za {{year}}.",
+  staleHarvestDescription:
+    "Sezona berbe završava uskoro. Ako ste je već obavili, zabilježite urod da vaša evidencija bude potpuna.",
+  recordHarvest: "Zabilježi berbu",
 
   // Harvest methods
   methodHand: "Ručno",
@@ -153,7 +159,8 @@ export default {
   userUpdated: "Korisnik je uspješno ažuriran.",
   deleteUser: "Obriši korisnika",
   deleteUserConfirmTitle: "Jeste li sigurni?",
-  deleteUserConfirmDescription: "Ova radnja se ne može poništiti. Korisnički račun će biti trajno obrisan.",
+  deleteUserConfirmDescription:
+    "Ova radnja se ne može poništiti. Korisnički račun će biti trajno obrisan.",
   confirm: "Potvrdi",
   userDeleted: "Korisnik je uspješno obrisan.",
   cannotDeleteSelf: "Ne možete obrisati vlastiti račun.",
@@ -231,7 +238,8 @@ export default {
   // Categories
   categoryNotFound: "Kategorija nije pronađena",
   categoryExists: "Kategorija s ovim nazivom već postoji.",
-  categoryHasTransactions: "Nije moguće obrisati kategoriju koja ima transakcije.",
+  categoryHasTransactions:
+    "Nije moguće obrisati kategoriju koja ima transakcije.",
   createCategoryInline: "Kreiraj novu kategoriju",
   categoryName: "Naziv kategorije",
 

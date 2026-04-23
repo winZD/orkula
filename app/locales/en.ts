@@ -102,6 +102,10 @@ export default {
   selectGrove: "Select a grove",
   notesPlaceholder: "Optional notes about the harvest",
   groveNotFound: "Grove not found",
+  staleHarvestTitle: "No harvest recorded for {{year}} yet.",
+  staleHarvestDescription:
+    "The harvest season is ending soon. If you've already harvested, record the yield to keep your records complete.",
+  recordHarvest: "Record harvest",
 
   // Harvest methods
   methodHand: "Hand",
