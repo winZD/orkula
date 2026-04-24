@@ -335,16 +335,7 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
                   margin={{ left: 0, right: 0 }}
                 >
                   <CartesianGrid vertical={false} />
-                  <XAxis
-                    dataKey="grove"
-                    tickLine={false}
-                    axisLine={false}
-                    angle={-45}
-                    textAnchor="end"
-                    height={60}
-                    interval={0}
-                    tick={{ fontSize: 12 }}
-                  />
+                  <XAxis dataKey="grove" hide />
                   <YAxis
                     tickLine={false}
                     axisLine={false}
