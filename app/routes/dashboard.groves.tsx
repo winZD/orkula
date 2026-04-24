@@ -561,7 +561,12 @@ export default function Groves({ loaderData }: Route.ComponentProps) {
               </TableHeader>
               <TableBody>
                 {allGroves.map((grove) => (
-                  <TableRow key={grove.id}>
+                  <TableRow
+                    key={grove.id}
+                    data-state={
+                      selectedIds.has(grove.id) ? "selected" : undefined
+                    }
+                  >
                     <TableCell>
                       <Checkbox
                         checked={selectedIds.has(grove.id)}

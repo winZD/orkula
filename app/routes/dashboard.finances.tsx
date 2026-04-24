@@ -490,7 +490,10 @@ export default function Finances({ loaderData }: Route.ComponentProps) {
               </TableHeader>
               <TableBody>
                 {allTransactions.map((tx) => (
-                  <TableRow key={tx.id}>
+                  <TableRow
+                    key={tx.id}
+                    data-state={selectedIds.has(tx.id) ? "selected" : undefined}
+                  >
                     <TableCell>
                       <Checkbox
                         checked={selectedIds.has(tx.id)}

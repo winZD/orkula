@@ -300,7 +300,12 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                       {loaderData.teamMembers.map((member) => {
                         const isSelf = member.id === loaderData.currentUserId;
                         return (
-                          <TableRow key={member.id}>
+                          <TableRow
+                            key={member.id}
+                            data-state={
+                              selectedIds.has(member.id) ? "selected" : undefined
+                            }
+                          >
                             <TableCell>
                               {isSelf ? (
                                 <Checkbox

@@ -512,7 +512,12 @@ export default function Harvests({ loaderData }: Route.ComponentProps) {
               </TableHeader>
               <TableBody>
                 {allHarvests.map((harvest) => (
-                  <TableRow key={harvest.id}>
+                  <TableRow
+                    key={harvest.id}
+                    data-state={
+                      selectedIds.has(harvest.id) ? "selected" : undefined
+                    }
+                  >
                     <TableCell>
                       <Checkbox
                         checked={selectedIds.has(harvest.id)}
