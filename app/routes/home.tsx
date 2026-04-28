@@ -1,5 +1,6 @@
 import type { Route } from "./+types/home";
 import { Welcome } from "../welcome/welcome";
+import { getSessionUser } from "~/lib/auth.server";
 
 export function meta({}: Route.MetaArgs) {
   return [
@@ -8,6 +9,11 @@ export function meta({}: Route.MetaArgs) {
   ];
 }
 
-export default function Home() {
-  return <Welcome />;
+export async function loader({ request }: Route.LoaderArgs) {
+  const user = await getSessionUser(request);
+  return { isAuthenticated: Boolean(user) };
+}
+
+export default function Home({ loaderData }: Route.ComponentProps) {
+  return <Welcome isAuthenticated={loaderData.isAuthenticated} />;
 }

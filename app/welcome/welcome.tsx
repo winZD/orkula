@@ -1,8 +1,9 @@
 import { Link } from "react-router";
 import { useTranslation } from "react-i18next";
 
-export function Welcome() {
+export function Welcome({ isAuthenticated = false }: { isAuthenticated?: boolean }) {
   const { t } = useTranslation();
+  const ctaTo = isAuthenticated ? "/dashboard" : "/login";
 
   return (
     <div className="flex flex-col h-screen w-full">
@@ -43,9 +44,12 @@ export function Welcome() {
           <p className="text-base md:text-lg leading-relaxed max-w-md text-forest">
             {t("homeDescription")}
           </p>
-          <button className="mt-2 md:mt-4 px-8 py-3 font-semibold rounded-lg transition-opacity hover:opacity-80 bg-forest text-cream">
+          <Link
+            to={ctaTo}
+            className="mt-2 md:mt-4 px-8 py-3 font-semibold rounded-lg transition-opacity hover:opacity-80 bg-forest text-cream"
+          >
             {t("homeCta")}
-          </button>
+          </Link>
         </section>
       </main>
     </div>
