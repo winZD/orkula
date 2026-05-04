@@ -281,7 +281,7 @@ export default function Finances({ loaderData }: Route.ComponentProps) {
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center gap-4">
         <div className="flex items-center gap-2">
           <label className="text-sm font-medium">{t("year")}:</label>
           <Select value={String(currentYear)} onValueChange={handleYearChange}>
