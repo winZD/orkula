@@ -7,12 +7,10 @@
 
 @utility container {
   margin-inline: auto;
-  max-width: 1440px;
+  max-width: var(--page-max-width);
 }
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif,
-    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
   --color-forest: #1b4019;
   --color-cream: #ede8d0;
 }
@@ -27,6 +25,7 @@ html {
 }
 
 :root {
+  --page-max-width: 1440px;
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -68,7 +67,7 @@ html {
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.87 0.00 0);
+  --primary: oklch(0.87 0 0);
   --primary-foreground: oklch(0.205 0 0);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
@@ -142,18 +141,25 @@ html {
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground container;
-    box-shadow: -8px 0 24px -4px rgba(34, 110, 40, 0.4),
-                8px 0 24px -4px rgba(34, 110, 40, 0.4);
+    @apply text-foreground;
   }
   html {
     @apply font-sans;
   }
 }
 
+.app-frame {
+  margin-inline: auto;
+  max-width: var(--page-max-width);
+  min-height: 100dvh;
+  background-color: var(--background);
+  box-shadow: -8px 0 24px -4px rgba(34, 110, 40, 0.4),
+              8px 0 24px -4px rgba(34, 110, 40, 0.4);
+}
+
 [data-slot="sidebar-container"][data-side="left"] {
-  left: max(0px, calc((100vw - 1440px) / 2));
+  left: max(0px, calc((100vw - var(--page-max-width)) / 2));
 }
 [data-slot="sidebar"][data-collapsible="offcanvas"] [data-slot="sidebar-container"][data-side="left"] {
-  left: calc(max(0px, (100vw - 1440px) / 2) - var(--sidebar-width));
+  left: calc(max(0px, (100vw - var(--page-max-width)) / 2) - var(--sidebar-width));
 }
