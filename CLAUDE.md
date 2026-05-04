@@ -22,7 +22,9 @@ No test runner is currently configured.
 
 ### Framework & Routing
 
-React Router v7 with SSR enabled (`react-router.config.ts` has `v8_middleware: true` future flag), file-based routing defined in `app/routes.ts`. Routes use the loader/action pattern for data fetching and mutations (no client-side state management library). Route types are auto-generated in `.react-router/types/` — import as `import type { Route } from "./+types/<route-name>"`. Server rendering uses `renderToPipeableStream` with bot detection (`isbot`) to choose between `onAllReady` (bots) and `onShellReady` (browsers) for streaming.
+React Router v7 with SSR enabled (`react-router.config.ts`), file-based routing defined in `app/routes.ts`. Routes use the loader/action pattern for data fetching and mutations (no client-side state management library). Route types are auto-generated in `.react-router/types/` — import as `import type { Route } from "./+types/<route-name>"`. Server rendering uses `renderToPipeableStream` with bot detection (`isbot`) to choose between `onAllReady` (bots) and `onShellReady` (browsers) for streaming.
+
+The `v8_middleware: true` future flag in `react-router.config.ts` is what enables route-level `export const middleware = [...]`. `app/root.tsx` uses this to attach `i18nextMiddleware` on every request — without the flag, the i18n flow described below will not run.
 
 Path alias: `~/*` maps to `./app/*`.
 
@@ -36,7 +38,10 @@ Path alias: `~/*` maps to `./app/*`.
 
 ### Database
 
-PostgreSQL via Prisma ORM (`@prisma/adapter-pg`). Generated client is imported from `generated/prisma/client` (not `@prisma/client`). Requires `DATABASE_URL` in `.env`.
+PostgreSQL via **Prisma 7** (`prisma@^7.4.2`) with the `@prisma/adapter-pg` driver adapter. Prisma 7 differences worth knowing:
+- The schema uses the new `prisma-client` generator with an explicit `output = "../generated/prisma"`, so the client is imported from `generated/prisma/client` — not `@prisma/client`.
+- Prisma config (schema path, migrations dir, datasource URL) lives in `prisma.config.ts` at the repo root, **not** in `package.json`.
+- `DATABASE_URL` must be set in `.env` (loaded by `dotenv/config` in `prisma.config.ts`).
 
 Core models: Tenant → Users, Groves, Harvests, Categories, Transactions. Users have roles (OWNER, ADMIN, MEMBER). Groves track olive varieties via GroveVariety join model (free-text `variety` string — users can add any variety name). Harvests track method via `HarvestMethod` enum (HAND, RAKE, MECHANICAL_SHAKER, VIBRATOR, NET). Transactions (EXPENSE/INCOME) belong to a Category (scoped per tenant and type). Expense transactions can be allocated across groves via GroveApplication join model (tracks quantity and calculated cost per grove). Transactions have composite indexes on `(tenantId, date)` and `(tenantId, type)`.
 
